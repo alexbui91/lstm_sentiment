@@ -55,7 +55,7 @@ def load_file(pathfile):
         return data 
 
 
-def loadWordVectors(file):
+def loadWordVectors(file, data_path):
     d = Data(file)
-    d.loadWordVectorsFromText()
+    d.loadWordVectorsFromText(data_path)
     return d.vectors, d.vocabs

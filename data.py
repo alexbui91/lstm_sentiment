@@ -37,10 +37,10 @@ class Data:
         del self.vectors
         del self.vocabs
 
-    def loadWordVectorsFromText(self):
+    def loadWordVectorsFromText(self, data_path="data"):
         self.initData()
-        file_vectors = "data/vectors.txt"
-        file_mapping = "data/vocabs.txt"
+        file_vectors = data_path + "/vectors.txt"
+        file_mapping = data_path + "/vocabs.txt"
         if path.exists(file_vectors) and path.exists(file_mapping):
             with open(file_vectors, 'rb') as f:
                 self.vectors = pickle.load(f)

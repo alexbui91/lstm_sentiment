@@ -4,7 +4,7 @@ import numpy as np
 import utils
 
 
-words_vector, vocabs = None, None
+word_vectors, vocabs = None, None
 
 
 def mix_data():    
@@ -107,14 +107,16 @@ def make_sentence_idx(docs):
     return results_x
 
 #word_vector_path="../data/glove.6B.300d.txt"
-def exe(word_vectors_path, is_reload_data=False):
+#main.exe(word_vectors_file="../data/glove_text8.txt", word_vectors_path="../cnn_sentiment/data")
+def exe(word_vectors_file, word_vectors_path="data/", is_reload_data=False):
+    global word_vectors, vocabs
     data_path = "data"
     train_path = data_path + "/train_m"
     dev_path = data_path + "/dev_m"
     test_path = data_path + "/test_m"
     datafile = data_path + "/dataset.txt"
     if word_vectors is None or vocabs is None:
-        word_vectors, vocabs = utils.loadWordVectors(word_vectors_path)
+        word_vectors, vocabs = utils.loadWordVectors(word_vectors_file, word_vectors_path)
     if os.path.exists(datafile) and not is_reload_data:
         with open(datafile, 'rb') as f:
             dataset = pickle.load(f)
@@ -125,7 +127,7 @@ def exe(word_vectors_path, is_reload_data=False):
         dataset = dict()
         train_x, train_y = load_data_in_directory(train_path)
         dev_x, dev_y = load_data_in_directory(dev_path)
-        test_x, test_y = load_data_in_directory(train_path)
+        test_x, test_y = load_data_in_directory(test_path)
         dataset['train'] = (train_x, train_y)
         dataset['dev'] = (dev_x, dev_y)
         dataset['test'] = (test_x, test_y)
