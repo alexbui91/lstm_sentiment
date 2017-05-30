@@ -115,7 +115,6 @@ def exe(word_vectors_path, is_reload_data=False):
     datafile = data_path + "/dataset.txt"
     if word_vectors is None or vocabs is None:
         word_vectors, vocabs = utils.loadWordVectors(word_vectors_path)
-    if os.path.exists(datafile):
     if os.path.exists(datafile) and not is_reload_data:
         with open(datafile, 'rb') as f:
             dataset = pickle.load(f)
