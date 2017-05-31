@@ -1,6 +1,8 @@
 import theano
 import theano.tensor as T
 import pickle
+import numpy as np
+import properties
 import os.path as path
 from data import Data
 
@@ -59,3 +61,39 @@ def loadWordVectors(file, data_path):
     d = Data(file)
     d.loadWordVectorsFromText(data_path)
     return d.vectors, d.vocabs
+
+
+def make_sentence_idx(vocabs, sent, max_sent_length):
+    sent_v = list()
+    sent_length = len(sent)
+    for i in xrange(max_sent_length):
+        if i < sent_length:
+            if sent[i] in vocabs:
+                sent_v.append(vocabs[sent[i]])
+            else: 
+                sent_v.append(0)
+        else:
+            sent_v.append(0)
+    return sent_v
+
+
+def get_num_words(vocabs, sent):
+    length = 0
+    words = sent.split()
+    for word in words:
+        if word in vocabs:
+            length += 1
+    return length
+
+
+def ortho_weight(ndim):
+    W = np.random.randn(ndim, ndim)
+    u, s, v = np.linalg.svd(W)
+    return u.astype(theano.config.floatX)
+
+
+def check_array_full_zeros(arr):
+    for x in arr:
+        if not x:
+            return False
+    return True

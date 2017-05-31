@@ -2,6 +2,7 @@ import os
 import shutil
 import numpy as np
 import utils
+from model import Model
 
 
 word_vectors, vocabs = None, None
@@ -77,38 +78,41 @@ def copy_all(from_dir, to_dir, prefix):
         shutil.copy2(os.path.join(from_dir, filename),os.path.join(to_dir, prefix + filename))
 
 
-def load_data_in_directory(directory):
-    pos_x, pos_y = load_data_in_classified_folder(directory + "/pos", 1)
-    neg_x, neg_y = load_data_in_classified_folder(directory + "/neg", 0)
-    return np.concatenate((pos_x, neg_x)), np.concatenate((pos_y, neg_y))
+def load_data_in_directory(directory, vocabs):
+    p_sents, p_maxlen = load_data_in_classified_folder(directory + "/pos", vocabs)
+    n_sents, n_maxlen = load_data_in_classified_folder(directory + "/neg", vocabs)
+    if p_maxlen < n_maxlen:
+        p_maxlen = n_maxlen
+    return p_sents, n_sents, p_maxlen
    
 
-
-def load_data_in_classified_folder(path, target):
-    data_x, data_y = list(), list()
+def load_data_in_classified_folder(path, vocabs):
+    maxlen = 0
+    sents = list()
     for filename in os.listdir(path):
         if filename.endswith(".txt"): 
             with open(os.path.join(path, filename), 'rb') as f:
-                data_y.append(target)
                 docs = f.read()
-                docs_idx = make_sentence_idx(docs)
-                data_x.append(docs_idx)
+                docs = docs.lower()
+                sents.append(docs)
+                length = utils.get_num_words(vocabs, docs)
+                if maxlen < length:
+                    maxlen = length
+    return sents, maxlen
+
+
+def process_data(vocabs, sents, target, maxlen):
+    data_x, data_y = list(), list()
+    for sent in sents:
+        data_y.append(target)
+        docs_idx = utils.make_sentence_idx(vocabs, sent, maxlen)
+        data_x.append(docs_idx)
     return data_x, data_y
 
-
-def make_sentence_idx(docs):
-    global vocabs
-    results_x = list()
-    docs = docs.lower()
-    words = docs.split(" ")
-    for word in words:
-        if word in vocabs:
-            results_x.append(vocabs[word])
-    return results_x
-
 #word_vector_path="../data/glove.6B.300d.txt"
+#main.exe(word_vectors_file="../data/glove.6B.300d.txt", word_vectors_path="../nlp/data")
 #main.exe(word_vectors_file="../data/glove_text8.txt", word_vectors_path="../cnn_sentiment/data")
-def exe(word_vectors_file, word_vectors_path="data/", is_reload_data=False):
+def exe(word_vectors_file, word_vectors_path="data/", hidden_sizes=[50, 10, 2], is_reload_data=False):
     global word_vectors, vocabs
     data_path = "data"
     train_path = data_path + "/train_m"
@@ -118,17 +122,25 @@ def exe(word_vectors_file, word_vectors_path="data/", is_reload_data=False):
     if word_vectors is None or vocabs is None:
         word_vectors, vocabs = utils.loadWordVectors(word_vectors_file, word_vectors_path)
     if os.path.exists(datafile) and not is_reload_data:
-        with open(datafile, 'rb') as f:
-            dataset = pickle.load(f)
-            train_x, train_y = dataset['train']
-            dev_x, dev_y = dataset['dev']
-            test_x, test_y = dataset['test']
+        dataset = utils.load_file(datafile)
     else: 
         dataset = dict()
-        train_x, train_y = load_data_in_directory(train_path)
-        dev_x, dev_y = load_data_in_directory(dev_path)
-        test_x, test_y = load_data_in_directory(test_path)
-        dataset['train'] = (train_x, train_y)
-        dataset['dev'] = (dev_x, dev_y)
-        dataset['test'] = (test_x, test_y)
+        train_pos_sents, train_neg_sents, train_len = load_data_in_directory(train_path, vocabs)
+        dev_pos_sents, dev_neg_sents, dev_len = load_data_in_directory(dev_path, vocabs)
+        test_pos_sents, test_neg_sents, test_len = load_data_in_directory(test_path, vocabs)
+        maxlen = utils.find_largest_number(train_len, dev_len, test_len)
+
+        train_pos_x, train_pos_y = process_data(vocabs, train_pos_sents, 1, maxlen)
+        train_neg_x, train_neg_y = process_data(vocabs, train_neg_sents, 0, maxlen)
+        dev_pos_x, dev_pos_y = process_data(vocabs, dev_pos_sents, 1, maxlen)
+        dev_neg_x, dev_neg_y = process_data(vocabs, dev_neg_sents, 0, maxlen)
+        test_pos_x, test_pos_y = process_data(vocabs, test_pos_sents, 1, maxlen)
+        test_neg_x, test_neg_y = process_data(vocabs, test_neg_sents, 0, maxlen)
+
+        dataset['train'] = (train_pos_x + train_neg_x, train_pos_y + train_neg_y)
+        dataset['dev'] = (dev_pos_x + dev_neg_x, dev_pos_y + dev_neg_y)
+        dataset['test'] = (test_pos_x + test_neg_x, test_pos_y + test_neg_y)
+        dataset['maxlen'] = maxlen
         utils.save_file(datafile, dataset)
+    model = Model(word_vectors, hidden_sizes=hidden_sizes)
+    model.train(dataset['train'], dataset['dev'], dataset['test'], dataset['maxlen'])
