@@ -180,7 +180,7 @@ class Model():
     def momentum(self, grads, v_prev):
         #velocity is delta
         velocity = self.get_velocity(grads, v_prev)
-        return velocity]
+        return velocity
 
     def get_velocity(self, grads, v_prev):
         return [v + properties.n_gamma + properties.learning_rate * g for g, v in zip(grads, v_prev)]
