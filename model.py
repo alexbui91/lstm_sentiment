@@ -51,7 +51,6 @@ class Model():
         e_grad_d, e_delta_prev_d, delta_d = self.init_hyper_values(params_length, name="D")
         #apply gradient
         grads = T.grad(cost, params)
-        print(grads)
         #dropout hidden layer
         hidden_layer_dropout.dropout()
         hidden_layer_dropout.predict()
@@ -90,7 +89,9 @@ class Model():
             print("Start epoch: %i" % epoch)
             start = time.time()
             for mini_batch in xrange(n_train_batches):
-                epoch_cost_train += train_model(mini_batch)
+                current_cost = train_model(mini_batch)
+                if current_cost:
+                    epoch_cost_train += current_cost
                 # perform early stopping to avoid overfitting (check with frequency or check every iteration)
                 # iter = (epoch - 1) * n_train_batches + minibatch_index
                 # if (iter + 1) % validation_frequency == 0

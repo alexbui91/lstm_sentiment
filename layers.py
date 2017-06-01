@@ -50,8 +50,8 @@ class LSTM(object):
             C = c * i + f * C_
             h = o * T.tanh(C)
             return h, C
-        results, updates = theano.scan(step, outputs_info=[T.alloc(np.asarray((0.), dtype=theano.config.floatX), self.batch_size, self.dim),
-                                                            T.alloc(np.asarray((0.), dtype=theano.config.floatX), self.batch_size, self.dim)],
+        results, updates = theano.scan(step, outputs_info=[T.alloc(np.asarray((0.), dtype='float64'), self.batch_size, self.dim),
+                                                            T.alloc(np.asarray((0.), dtype='float64'), self.batch_size, self.dim)],
                                             sequences=[X_shuffled],
                                             name="LSTM_iteration",
                                             n_steps=self.number_step)
