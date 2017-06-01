@@ -93,7 +93,6 @@ class Model():
             for mini_batch in xrange(n_train_batches):
                 current_cost = train_model(mini_batch)
                 if not math.isnan(current_cost):
-                    print(current_cost)
                     epoch_cost_train += current_cost
                 # perform early stopping to avoid overfitting (check with frequency or check every iteration)
                 # iter = (epoch - 1) * n_train_batches + minibatch_index
