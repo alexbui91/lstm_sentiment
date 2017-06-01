@@ -53,18 +53,19 @@ class Model():
         #apply gradient
         grads = T.grad(cost, params)
         #dropout hidden layer
-        hidden_layer_dropout.dropout()
-        hidden_layer_dropout.predict()
-        full_connect.setInput(hidden_layer_dropout.output)
-        full_connect.predict()
-        cost_d = full_connect.negative_log_likelihood(y)
+        # hidden_layer_dropout.dropout()
+        # hidden_layer_dropout.predict()
+        # full_connect.setInput(hidden_layer_dropout.output)
+        # full_connect.predict()
+        # cost_d = full_connect.negative_log_likelihood(y)
         #apply gradient to cost_d
-        grads_d = T.grad(cost_d, params)
-        e_grad, e_delta_prev, delta = self.adadelta(grads, e_grad, e_delta_prev, delta)
-        e_grad_d, e_delta_prev_d, delta_d = self.adadelta(grads_d, e_grad_d, e_delta_prev_d, delta_d)
+        # grads_d = T.grad(cost_d, params)
+        # e_grad, e_delta_prev, delta = self.adadelta(grads, e_grad, e_delta_prev, delta)
+        # e_grad_d, e_delta_prev_d, delta_d = self.adadelta(grads_d, e_grad_d, e_delta_prev_d, delta_d)
         grads = delta
-        grad_d = delta_d
-        updates = [(p, p - d - d_) for p, d, d_ in zip(params, grads, grads_d)]
+        # grad_d = delta_d
+        # updates = [(p, p - d - d_) for p, d, d_ in zip(params, grads, grads_d)]
+        updates = [(p, p - d) for p, d in zip(params, grads)]
         train_model = theano.function([index], cost, updates=updates, givens={
             x: train_x[(index * self.batch_size):((index + 1) * self.batch_size)],
             y: train_y[(index * self.batch_size):((index + 1) * self.batch_size)]
