@@ -121,9 +121,9 @@ class Model():
                     stop_count += 1
                 if stop_count == self.patience:
                     break
-            average_test_epoch_score = test_epoch_score / total_test_time
-            print(('epoch %i, test error of %i example is: %.5f') %
-                  (epoch, test_len, average_test_epoch_score * 100.))
+            if total_test_time:
+                average_test_epoch_score = test_epoch_score / total_test_time
+                print(('epoch %i, test error of %i example is: %.5f') % (epoch, test_len, average_test_epoch_score * 100.))
             print('epoch: %i, training time: %.2f secs; with cost: %.2f' %
                   (epoch, time.time() - start, epoch_cost_train))
 
