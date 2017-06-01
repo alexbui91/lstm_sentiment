@@ -92,6 +92,7 @@ class Model():
             for mini_batch in xrange(n_train_batches):
                 current_cost = train_model(mini_batch)
                 if not math.isnan(current_cost):
+                    print(current_cost)
                     epoch_cost_train += current_cost
                 # perform early stopping to avoid overfitting (check with frequency or check every iteration)
                 # iter = (epoch - 1) * n_train_batches + minibatch_index
@@ -164,14 +165,37 @@ class Model():
         
 
         return e_grad, e_delta_prev, delta
+    
+    def rms_prop(self, grads, e_g_prev):
+        e_grad = self.average_value(e_g_prev, grads)
+        rms_g = self.RMS(e_grad)
+        delta = delta = self.cal_delta(rms_g, grads)
+        return e_grad, delta
 
+    def adagrad(self, grads):
+        G = self.sum_diag(grads)
+        rms_g = self.RMS(G)
+        delta = self.cal_delta(rms_g, grads)
+
+    def momentum(self, grads, v_prev):
+        #velocity is delta
+        velocity = self.get_velocity(grads, v_prev)
+        return velocity]
+
+    def get_velocity(self, grads, v_prev):
+        return [v + properties.n_gamma + properties.learning_rate * g for g, v in zip(grads, v_prev)]
+
+    def sum_diag(self, grads):
+        return [T.sum(T.nlinalg.ExtractDiag(g)) for g in grads]
 
     def average_value(self, E_prev, grads):
         # grads_ = [T.cast(i, theano.config.floatX) for i in grads]
         # return E_prev * properties.gamma + (1 - properties.gamma) * grads_
         return [e * properties.gamma + (1 - properties.gamma) * g for e, g in  zip(E_prev, grads)]
 
-
     def RMS(self, values):
         return [T.sqrt(e + properties.epsilon) for e in  values]
         # return T.sqrt(values + properties.epsilon)
+    
+    def cal_delta(self, denominator, grads):
+        return [properties.learning_rate / rms * g for rms, g in zip(denominator, grads)]

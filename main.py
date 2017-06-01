@@ -128,8 +128,8 @@ def exe(word_vectors_file, word_vectors_path="data/", hidden_sizes=[50, 10, 2], 
         train_pos_sents, train_neg_sents, train_len = load_data_in_directory(train_path, vocabs)
         dev_pos_sents, dev_neg_sents, dev_len = load_data_in_directory(dev_path, vocabs)
         test_pos_sents, test_neg_sents, test_len = load_data_in_directory(test_path, vocabs)
-        maxlen = utils.find_largest_number(train_len, dev_len, test_len)
-
+        # maxlen = utils.find_largest_number(train_len, dev_len, test_len)
+        maxlen = properties.maxlen
         train_pos_x, train_pos_y = process_data(vocabs, train_pos_sents, 1, maxlen)
         train_neg_x, train_neg_y = process_data(vocabs, train_neg_sents, 0, maxlen)
         dev_pos_x, dev_pos_y = process_data(vocabs, dev_pos_sents, 1, maxlen)
