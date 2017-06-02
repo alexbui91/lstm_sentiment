@@ -5,6 +5,7 @@ import time
 import properties
 import utils 
 import math
+from pympler import tracker
 
 from layers import LSTM, HiddenLayer, HiddenLayerDropout, FullConnectLayer
 
@@ -22,6 +23,7 @@ class Model():
         self.gamma = theano.shared(np.asarray([properties.gamma, 1 - properties.gamma], dtype=theano.config.floatX))
 
     def train(self, train_data, dev_data, test_data, maxlen):
+        tr = tracker.SummaryTracker()
         rng = np.random.RandomState(3435)
         train_x, train_y = self.shared_dataset(train_data)
         dev_x, dev_y = self.shared_dataset(dev_data)
@@ -92,6 +94,7 @@ class Model():
             start = time.time()
             for mini_batch in xrange(n_train_batches):
                 current_cost = train_model(mini_batch)
+                tr.print_diff()
                 if not math.isnan(current_cost):
                     epoch_cost_train += current_cost
                 # perform early stopping to avoid overfitting (check with frequency or check every iteration)

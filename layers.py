@@ -80,8 +80,10 @@ class HiddenLayer(object):
     
     def init_params(self):
         if not self.activation or self.activation.func_name == "ReLU":
+            #standard normal distribution when muy = 0 and Matrix = I
             W_values = np.asarray(0.01 * self.rng.standard_normal(size=(self.n_in, self.n_out)), dtype=theano.config.floatX)
         else:
+            # p distribution = 1/(high - low)
             W_values = np.asarray(self.rng.uniform(low=-np.sqrt(6. / (self.n_in + self.n_out)), high=np.sqrt(6. / (self.n_in + self.n_out)), size=(self.n_in, self.n_out)), dtype=theano.config.floatX)
         self.W = theano.shared(value=W_values, name='W_' + self.name)
         b_values = np.zeros((self.n_out,), dtype=theano.config.floatX)
