@@ -49,6 +49,8 @@ class LSTM(object):
             o = T.nnet.sigmoid(T.dot(x, self.Wo) + T.dot(h_, self.Uo) + self.bo)
             C = c * i + f * C_
             h = o * T.tanh(C)
+            print(h)
+            print(C)
             return h, C
         results, updates = theano.scan(step, outputs_info=[T.alloc(np.asarray((0.), dtype=theano.config.floatX), self.batch_size, self.dim),
                                                             T.alloc(np.asarray((0.), dtype=theano.config.floatX), self.batch_size, self.dim)],
