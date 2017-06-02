@@ -111,7 +111,7 @@ def process_data(vocabs, sents, target, maxlen):
     return data_x, data_y
 
 #word_vector_path="../data/glove.6B.300d.txt"
-#main.exe(word_vectors_file="../data/glove.6B.300d.txt", word_vectors_path="../nlp/data")
+#import main; main.exe(word_vectors_file="../data/glove.6B.300d.txt", word_vectors_path="./data")
 #main.exe(word_vectors_file="../data/glove_text8.txt", word_vectors_path="../cnn_sentiment/data")
 def exe(word_vectors_file, word_vectors_path="data/", hidden_sizes=[50, 10, 2], is_reload_data=False):
     global word_vectors, vocabs

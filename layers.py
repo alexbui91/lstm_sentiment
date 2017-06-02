@@ -41,7 +41,7 @@ class LSTM(object):
     
     def feed_foward(self, layer_input):
         #xt, h(t-1), c(t-1)
-        X_shuffled = layer_input.dimshuffle(1,0,2) 
+        X_shuffled = T.cast(layer_input.dimshuffle(1,0,2), theano.config.floatX)
         def step(x, h_, C_):
             i = T.nnet.sigmoid(T.dot(x, self.Wi) + T.dot(h_, self.Ui) + self.bi)
             f = T.nnet.sigmoid(T.dot(x, self.Wf) + T.dot(h_, self.Uf) + self.bf)
@@ -49,8 +49,6 @@ class LSTM(object):
             o = T.nnet.sigmoid(T.dot(x, self.Wo) + T.dot(h_, self.Uo) + self.bo)
             C = c * i + f * C_
             h = o * T.tanh(C)
-            print(h)
-            print(C)
             return h, C
         results, updates = theano.scan(step, outputs_info=[T.alloc(np.asarray((0.), dtype=theano.config.floatX), self.batch_size, self.dim),
                                                             T.alloc(np.asarray((0.), dtype=theano.config.floatX), self.batch_size, self.dim)],
