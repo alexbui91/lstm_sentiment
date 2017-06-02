@@ -2,6 +2,7 @@ import theano
 import theano.tensor as T
 import numpy as np
 import utils
+import properties
 
 class LSTM(object):
 
@@ -136,10 +137,13 @@ class FullConnectLayer(object):
         return self.y_prob
 
     def negative_log_likelihood(self, y):
-        return -T.mean(T.log(self.y_prob)[T.arange(y.shape[0]), y])
+        #only average over log of labeled propability
+        return -T.mean(T.log(self.y_prob[T.arange(y.shape[0]), y] + properties.epsilon))
 
     def soft_negative_log_likelihood(self, y):
-        return -T.mean(T.sum(T.log(self.y_pred) * y, axis=1))
+        #average of sum of all possible choices. y must be vector of final value respective to number of classifications
+        #y shape is n batches * K classification
+        return -T.mean(T.sum(T.log(self.y_prob) * y, axis=1))
 
     def errors(self, y):
         if y.ndim != self.y_pred.ndim:

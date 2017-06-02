@@ -49,7 +49,9 @@ class Model():
         # hidden_layer_dropout = HiddenLayerDropout(rng, hidden_sizes=self.hidden_sizes[:2], input_vectors=lstm.output, W=hidden_layer.W, b=hidden_layer.b)
         full_connect = FullConnectLayer(rng, layers_size=[self.hidden_sizes[0], self.hidden_sizes[-1]], input_vector=hidden_layer_relu.output)
         full_connect.predict()
+
         cost = full_connect.negative_log_likelihood(y)
+        
         params = lstm.params + hidden_layer.params + hidden_layer_relu.params + full_connect.params
         params_length = len(params)
         #init value for e_grad time 0, e_delta time 0 and delta at time 0
@@ -67,7 +69,7 @@ class Model():
         # grads_d = T.grad(cost_d, params)
         # e_grad, e_delta_prev, delta = self.adadelta(grads, e_grad, e_delta_prev, delta)
         # e_grad_d, e_delta_prev_d, delta_d = self.adadelta(grads_d, e_grad_d, e_delta_prev_d, delta_d)
-        grads = delta
+        # grads = delta
         # grad_d = delta_d
         # updates = [(p, p - d - d_) for p, d, d_ in zip(params, grads, grads_d)]
         updates = [(p, p - d) for p, d in zip(params, grads)]
