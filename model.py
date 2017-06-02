@@ -111,6 +111,7 @@ class Model():
                 # stop_count ++.
                 # average of losses during evaluate => this number may be larger than 1
                 val_batch_lost = np.mean(val_losses)
+                print("validate losses: ", val_batch_lost)
                 if val_batch_lost < best_batch_lost:
                     best_batch_lost = val_batch_lost
                     stop_count = 0
