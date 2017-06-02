@@ -47,7 +47,7 @@ class Model():
         hidden_layer_relu = HiddenLayer(rng, hidden_sizes=hidden_sizes, input_vectors=hidden_layer.output)
         hidden_layer_relu.predict()
         # hidden_layer_dropout = HiddenLayerDropout(rng, hidden_sizes=self.hidden_sizes[:2], input_vectors=lstm.output, W=hidden_layer.W, b=hidden_layer.b)
-        full_connect = FullConnectLayer(rng, layers_size=self.hidden_sizes[1:], input_vector=hidden_layer_relu.output)
+        full_connect = FullConnectLayer(rng, layers_size=[self.hidden_sizes[0], self.hidden_sizes[-1]], input_vector=hidden_layer_relu.output)
         full_connect.predict()
         cost = full_connect.negative_log_likelihood(y)
         params = lstm.params + hidden_layer.params + hidden_layer_relu.params + full_connect.params
