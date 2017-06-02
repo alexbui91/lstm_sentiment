@@ -69,7 +69,7 @@ class Model():
         # grads_d = T.grad(cost_d, params)
         # e_grad, e_delta_prev, delta = self.adadelta(grads, e_grad, e_delta_prev, delta)
         # e_grad_d, e_delta_prev_d, delta_d = self.adadelta(grads_d, e_grad_d, e_delta_prev_d, delta_d)
-        # grads = delta
+        grads = delta
         # grad_d = delta_d
         # updates = [(p, p - d - d_) for p, d, d_ in zip(params, grads, grads_d)]
         updates = [(p, p - d) for p, d in zip(params, grads)]
@@ -200,7 +200,7 @@ class Model():
     def average_value(self, E_prev, grads):
         # grads_ = [T.cast(i, theano.config.floatX) for i in grads]
         # return E_prev * properties.gamma + (1 - properties.gamma) * grads_
-        return [e * properties.gamma + (1 - properties.gamma) * g for e, g in  zip(E_prev, grads)]
+        return [e * properties.gamma + (1 - properties.gamma) * (g**2) for e, g in  zip(E_prev, grads)]
 
     def RMS(self, values):
         return [T.sqrt(e + properties.epsilon) for e in  values]
