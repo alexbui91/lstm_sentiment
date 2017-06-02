@@ -91,6 +91,7 @@ class HiddenLayer(object):
         self.params = [self.W, self.b]
     
     def predict(self):
+        print(self.activation)
         lin_output = T.dot(self.input, self.W) + self.b
         self.output = (lin_output if self.activation is None else self.activation(lin_output))
 

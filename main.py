@@ -144,4 +144,4 @@ def exe(word_vectors_file, word_vectors_path="data/", hidden_sizes=[50, 10, 2], 
         dataset['maxlen'] = maxlen
         utils.save_file(datafile, dataset)
     model = Model(word_vectors, hidden_sizes=hidden_sizes)
-    model.train(dataset['train'], dataset['dev'], dataset['test'], dataset['maxlen'], activation)
+    model.train(dataset['train'], dataset['dev'], dataset['test'], dataset['maxlen'])

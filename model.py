@@ -41,9 +41,10 @@ class Model():
         lstm = LSTM(dim=input_width, batch_size=self.batch_size, number_step=maxlen)
         leyer0_output = lstm.feed_foward(layer0_input)
         lstm.mean_pooling_input(leyer0_output)
-        hidden_layer = HiddenLayer(rng, hidden_sizes=[self.hidden_sizes[0], self.hidden_sizes[0]], input_vectors=lstm.output, activation=utils.Tanh) 
+        hidden_sizes = [self.hidden_sizes[0], self.hidden_sizes[0]]
+        hidden_layer = HiddenLayer(rng, hidden_sizes=hidden_sizes, input_vectors=lstm.output, activation=utils.Tanh, name="Hidden_Tanh") 
         hidden_layer.predict()
-        hidden_layer_relu = HiddenLayer(rng, hidden_sizes=self.hidden_sizes[:2], input_vectors=hidden_layer.output)
+        hidden_layer_relu = HiddenLayer(rng, hidden_sizes=hidden_sizes, input_vectors=hidden_layer.output)
         hidden_layer_relu.predict()
         # hidden_layer_dropout = HiddenLayerDropout(rng, hidden_sizes=self.hidden_sizes[:2], input_vectors=lstm.output, W=hidden_layer.W, b=hidden_layer.b)
         full_connect = FullConnectLayer(rng, layers_size=self.hidden_sizes[1:], input_vector=hidden_layer_relu.output)
