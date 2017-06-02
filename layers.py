@@ -29,7 +29,7 @@ class LSTM(object):
         self.Uc = theano.shared(Uc_values, name="LSTM_Uc")
         Uo_values = utils.ortho_weight(self.dim)
         self.Uo = theano.shared(Uo_values, name="LSTM_Uo")
-        b_values = np.zeros((self.dim,))
+        b_values = np.zeros((self.dim,), dtype=theano.config.floatX)
         self.bi = theano.shared(b_values, name="LSTM_bi")
         self.bf = theano.shared(b_values, name="LSTM_bf")
         self.bc = theano.shared(b_values, name="LSTM_bc")
