@@ -52,12 +52,12 @@ class Model():
 
         cost = full_connect.negative_log_likelihood(y)
         
-        # params = lstm.params + hidden_layer.params + hidden_layer_relu.params + full_connect.params
-        params = hidden_layer.params + hidden_layer_relu.params + full_connect.params
+        params = lstm.params + hidden_layer.params + hidden_layer_relu.params + full_connect.params
+        # params = hidden_layer.params + hidden_layer_relu.params + full_connect.params
         params_length = len(params)
         #init value for e_grad time 0, e_delta time 0 and delta at time 0
         e_grad, e_delta_prev, delta = self.init_hyper_values(params_length)
-        e_grad_d, e_delta_prev_d, delta_d = self.init_hyper_values(params_length, name="D")
+        # e_grad_d, e_delta_prev_d, delta_d = self.init_hyper_values(params_length, name="D")
         #apply gradient
         grads = T.grad(cost, params)
         #dropout hidden layer
@@ -68,12 +68,12 @@ class Model():
         # cost_d = full_connect.negative_log_likelihood(y)
         #apply gradient to cost_d
         # grads_d = T.grad(cost_d, params)
-        # e_grad, e_delta_prev, delta = self.adadelta(grads, e_grad, e_delta_prev, delta)
+        e_grad, e_delta_prev, delta = self.adadelta(grads, e_grad, e_delta_prev)
         # e_grad_d, e_delta_prev_d, delta_d = self.adadelta(grads_d, e_grad_d, e_delta_prev_d, delta_d)
         #grads = delta
         # grad_d = delta_d
-        # updates = [(p, p - d - d_) for p, d, d_ in zip(params, grads, grads_d)]
-        updates = [(p, p - properties.learning_rate * d) for p, d in zip(params, grads)]
+        updates = [(p, p - d - d_) for p, d, d_ in zip(params, grads, grads_d)]
+        # updates = [(p, p - properties.learning_rate * d) for p, d in zip(params, grads)]
         train_model = theano.function([index], cost, updates=updates, givens={
             x: train_x[(index * self.batch_size):((index + 1) * self.batch_size)],
             y: train_y[(index * self.batch_size):((index + 1) * self.batch_size)]
@@ -157,25 +157,19 @@ class Model():
         return e_grad, e_delta, delta
 
     #e_delta_prev is e of delta of two previous step
-    def adadelta(self, grads, e_g_prev, e_delta_2, delta_prev):
+    def adadelta(self, grads, e_g_prev, e_delta):
         #calculate e value for grad from e g previous and current grad
         e_grad = self.average_value(e_g_prev, grads)
         #calculate rms for grad
         rms_g = self.RMS(e_grad)
-        #e value of delta of time - 1
-        e_delta_prev = self.average_value(e_delta_2, delta_prev)
         #rms0 = sqrt(epsilon)
-        rms_e_del_prev = self.RMS(e_delta_prev)
+        rms_e_del_prev = self.RMS(e_delta)
         #delta of current time
         delta = [rd / rg * g for rd, rg, g in zip(rms_e_del_prev, rms_g, grads)]
-        #2 first step need e values of delta is zeros
-        if not utils.check_array_full_zeros(e_delta_2):
-            e_delta_res = e_delta_prev
-        else: 
-            e_delta_res = e_delta_2
+        #e value of delta of time t
+        e_delta_1 = self.average_value(e_delta, delta)
         
-
-        return e_grad, e_delta_prev, delta
+        return e_grad, e_delta_1, delta
     
     def rms_prop(self, grads, e_g_prev):
         e_grad = self.average_value(e_g_prev, grads)
