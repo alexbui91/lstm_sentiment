@@ -12,7 +12,7 @@ from layers import LSTM, HiddenLayer, HiddenLayerDropout, FullConnectLayer
 class Model():
     
     def __init__(self, word_vectors, hidden_sizes=[300, 100, 2], dropout_rate=0.5, \
-                batch_size=50, epochs=20, patience=20, learning_rate=0.13):
+                batch_size=50, epochs=20, patience=10, learning_rate=0.13):
         self.word_vectors = word_vectors
         self.hidden_sizes = hidden_sizes
         self.dropout_rate = dropout_rate
@@ -52,7 +52,8 @@ class Model():
 
         cost = full_connect.negative_log_likelihood(y)
         
-        params = lstm.params + hidden_layer.params + hidden_layer_relu.params + full_connect.params
+        # params = lstm.params + hidden_layer.params + hidden_layer_relu.params + full_connect.params
+        params = hidden_layer.params + hidden_layer_relu.params + full_connect.params
         params_length = len(params)
         #init value for e_grad time 0, e_delta time 0 and delta at time 0
         e_grad, e_delta_prev, delta = self.init_hyper_values(params_length)
@@ -69,10 +70,10 @@ class Model():
         # grads_d = T.grad(cost_d, params)
         # e_grad, e_delta_prev, delta = self.adadelta(grads, e_grad, e_delta_prev, delta)
         # e_grad_d, e_delta_prev_d, delta_d = self.adadelta(grads_d, e_grad_d, e_delta_prev_d, delta_d)
-        grads = delta
+        #grads = delta
         # grad_d = delta_d
         # updates = [(p, p - d - d_) for p, d, d_ in zip(params, grads, grads_d)]
-        updates = [(p, p - d) for p, d in zip(params, grads)]
+        updates = [(p, p - properties.learning_rate * d) for p, d in zip(params, grads)]
         train_model = theano.function([index], cost, updates=updates, givens={
             x: train_x[(index * self.batch_size):((index + 1) * self.batch_size)],
             y: train_y[(index * self.batch_size):((index + 1) * self.batch_size)]
@@ -113,7 +114,7 @@ class Model():
                 # stop_count ++.
                 # average of losses during evaluate => this number may be larger than 1
                 val_batch_lost = np.mean(val_losses)
-                print("validate losses: ", val_batch_lost)
+                #print("validate losses: ", val_batch_lost)
                 if val_batch_lost < best_batch_lost:
                     best_batch_lost = val_batch_lost
                     stop_count = 0
@@ -129,6 +130,7 @@ class Model():
                 else:
                     stop_count += 1
                 if stop_count == self.patience:
+                    stop_count = 0
                     break
             if total_test_time:
                 average_test_epoch_score = test_epoch_score / total_test_time
