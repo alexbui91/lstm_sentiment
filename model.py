@@ -72,7 +72,7 @@ class Model():
         # e_grad_d, e_delta_prev_d, delta_d = self.adadelta(grads_d, e_grad_d, e_delta_prev_d, delta_d)
         #grads = delta
         # grad_d = delta_d
-        updates = [(p, p - d - d_) for p, d, d_ in zip(params, grads, grads_d)]
+        updates = [(p, p - d) for p, d in zip(params, grads)]
         # updates = [(p, p - properties.learning_rate * d) for p, d in zip(params, grads)]
         train_model = theano.function([index], cost, updates=updates, givens={
             x: train_x[(index * self.batch_size):((index + 1) * self.batch_size)],

@@ -1,5 +1,7 @@
 import theano
 import theano.tensor as T
+from theano.tensor.signal import pool
+from theano.tensor.nnet import conv
 import numpy as np
 import utils
 import properties
@@ -60,7 +62,53 @@ class LSTM(object):
         return results[0]
     
     def mean_pooling_input(self, layer_input):
+        #axis = 0 is x(col), = 1 is y (row),
         self.output = T.mean(layer_input, axis=0)
+
+class ConvolutionLayer(object):
+    def __init__(self, rng=None, filter_shape=None, input_shape=None, poolsize=(2, 2), non_linear="tanh"):
+        #filter_shape = number of kenel, channel, height, width
+        #input_shape = batch_size, channel, height, width
+        #poolsize = height_pool x width_pool (if width = 1 mean select all vector word)
+        assert input_shape[1] == filter_shape[1]
+        self.filter_shape = filter_shape
+        self.input_shape = input_shape
+        self.non_linear = non_linear
+        self.poolsize = poolsize
+        self.rng = rng
+        self.initHyperParams()
+
+    def initHyperParams(self):
+        # there are "num input feature maps * filter height * filter width"
+        # inputs to each hidden unit
+        fan_in = np.prod(self.filter_shape[1:])
+        # each unit in the lower layer receives a gradient from:
+        # "num output feature maps * filter height * filter width" /
+        #   pooling size
+        fan_out = (self.filter_shape[0] * np.prod(self.filter_shape[2:]) / np.prod(self.poolsize))
+        # initialize weights with random weights
+        if self.non_linear == "none" or self.non_linear == "relu":
+            self.W = theano.shared(np.asarray(rng.uniform(low=-0.01, high=0.01, size=self.filter_shape), dtype=theano.config.floatX), borrow=True, name="W_conv")
+        else:
+            W_bound = np.sqrt(6. / (fan_in + fan_out))
+            self.W = theano.shared(np.asarray(self.rng.uniform(low=-W_bound, high=W_bound, size=self.filter_shape), dtype=theano.config.floatX), borrow=True, name="W_conv")
+        b_values = np.zeros((self.filter_shape[0],), dtype=theano.config.floatX)
+        self.b = theano.shared(value=b_values, borrow=True, name="b_conv")
+        self.params = [self.W, self.b]
+
+    def predict(self, new_data):
+        conv_out = conv.conv2d(input=new_data, filters=self.W, filter_shape=self.filter_shape, image_shape=self.input_shape)
+        if self.non_linear == "tanh":
+            conv_out_tanh = T.tanh(conv_out + self.b.dimshuffle('x', 0, 'x', 'x'))
+            output = pool.pool_2d(input=conv_out_tanh, ws=self.poolsize, ignore_border=True)
+        if self.non_linear == "relu":
+            conv_out_tanh = utils.ReLU(conv_out + self.b.dimshuffle('x', 0, 'x', 'x'))
+            output = pool.pool_2d(input=conv_out_tanh, ws=self.poolsize, ignore_border=True)
+        else:
+            pooled_out = pool.pool_2d(input=conv_out, ws=self.poolsize, ignore_border=True)
+            output = pooled_out + self.b.dimshuffle('x', 0, 'x', 'x')
+        return output
+
 
 class HiddenLayer(object):
     
@@ -92,7 +140,6 @@ class HiddenLayer(object):
         self.params = [self.W, self.b]
     
     def predict(self):
-        print(self.activation)
         lin_output = T.dot(self.input, self.W) + self.b
         self.output = (lin_output if self.activation is None else self.activation(lin_output))
 
