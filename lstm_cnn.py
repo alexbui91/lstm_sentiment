@@ -46,19 +46,21 @@ class LSTM_CNN():
         conv_params = list()
         for fter in self.filter_sizes:
             pheight= maxlen - fter + 1
-            conv = ConvolutionLayer(rng=rng, filter_shape=(input_width, 1, fter, input_width), 
+            conv = ConvolutionLayer(rng=rng, filter_shape=(self.kernel, 1, fter, input_width), 
                                     input_shape=(self.batch_size, 1, maxlen, input_width),
-                                    poolsize=(pheight, 1))
-            layer0_input = layer0_input.reshape((self.batch_size, 1, maxlen, input_width))
-            output = conv.predict(layer0_input)
-            conv_outputs.append(output);
+                                    poolsize=(pheight, 1), name="conv" + str(fter))
+            output = layer0_input.flatten()
+            output = layer0_input.reshape((self.batch_size, 1, maxlen, input_width))
+            #=>batch size * 1 * 100 * width
+            output = conv.predict(output)
+            layer1_input = output.flatten(2)
+            conv_outputs.append(layer1_input);
             conv_params += conv.params
         conv_nnets_output = T.concatenate(conv_outputs, axis=1)
         # lstm.mean_pooling_input(leyer0_output)
-        hidden_sizes = [self.hidden_sizes[0]*3, self.hidden_sizes[0]]
-        hidden_layer = HiddenLayer(rng, hidden_sizes=hidden_sizes, input_vectors=lstm.output, activation=utils.Tanh, name="Hidden_Tanh") 
+        hidden_layer = HiddenLayer(rng, hidden_sizes=[self.kernel*3, self.hidden_sizes[0]], input_vectors=conv_nnets_output, activation=utils.Tanh, name="Hidden_Tanh") 
         hidden_layer.predict()
-        hidden_layer_relu = HiddenLayer(rng, hidden_sizes=hidden_sizes, input_vectors=hidden_layer.output)
+        hidden_layer_relu = HiddenLayer(rng, hidden_sizes=[self.hidden_sizes[0], self.hidden_sizes[0]], input_vectors=hidden_layer.output)
         hidden_layer_relu.predict()
         # hidden_layer_dropout = HiddenLayerDropout(rng, hidden_sizes=self.hidden_sizes[:2], input_vectors=lstm.output, W=hidden_layer.W, b=hidden_layer.b)
         full_connect = FullConnectLayer(rng, layers_size=[self.hidden_sizes[0], self.hidden_sizes[-1]], input_vector=hidden_layer_relu.output)
@@ -66,7 +68,7 @@ class LSTM_CNN():
 
         cost = full_connect.negative_log_likelihood(y)
         
-        params = lstm.params + hidden_layer.params + hidden_layer_relu.params + full_connect.params
+        params = lstm.params + conv_params + hidden_layer.params + hidden_layer_relu.params + full_connect.params
         # params = hidden_layer.params + hidden_layer_relu.params + full_connect.params
         params_length = len(params)
         #init value for e_grad time 0, e_delta time 0 and delta at time 0
@@ -75,7 +77,7 @@ class LSTM_CNN():
         #apply gradient
         grads = T.grad(cost, params)
         #dropout hidden layer
-        # hidden_layer_dropout.dropout()
+        # hidden_layer_dropout.dropout()    
         # hidden_layer_dropout.predict()
         # full_connect.setInput(hidden_layer_dropout.output)
         # full_connect.predict()

@@ -44,6 +44,7 @@ class LSTM(object):
     
     def feed_foward(self, layer_input):
         #xt, h(t-1), c(t-1)
+        #scan over sequence * batch size * width
         X_shuffled = T.cast(layer_input.dimshuffle(1,0,2), theano.config.floatX)
         def step(x, h_, C_):
             i = T.nnet.sigmoid(T.dot(x, self.Wi) + T.dot(h_, self.Ui) + self.bi)
@@ -66,7 +67,7 @@ class LSTM(object):
         self.output = T.mean(layer_input, axis=0)
 
 class ConvolutionLayer(object):
-    def __init__(self, rng=None, filter_shape=None, input_shape=None, poolsize=(2, 2), non_linear="tanh"):
+    def __init__(self, rng=None, filter_shape=None, input_shape=None, poolsize=(2, 2), non_linear="tanh", name="Conv"):
         #filter_shape = number of kenel, channel, height, width
         #input_shape = batch_size, channel, height, width
         #poolsize = height_pool x width_pool (if width = 1 mean select all vector word)
@@ -76,6 +77,7 @@ class ConvolutionLayer(object):
         self.non_linear = non_linear
         self.poolsize = poolsize
         self.rng = rng
+        self.name = name
         self.initHyperParams()
 
     def initHyperParams(self):
@@ -88,12 +90,12 @@ class ConvolutionLayer(object):
         fan_out = (self.filter_shape[0] * np.prod(self.filter_shape[2:]) / np.prod(self.poolsize))
         # initialize weights with random weights
         if self.non_linear == "none" or self.non_linear == "relu":
-            self.W = theano.shared(np.asarray(rng.uniform(low=-0.01, high=0.01, size=self.filter_shape), dtype=theano.config.floatX), borrow=True, name="W_conv")
+            self.W = theano.shared(np.asarray(rng.uniform(low=-0.01, high=0.01, size=self.filter_shape), dtype=theano.config.floatX), name="W_" + self.name)
         else:
             W_bound = np.sqrt(6. / (fan_in + fan_out))
-            self.W = theano.shared(np.asarray(self.rng.uniform(low=-W_bound, high=W_bound, size=self.filter_shape), dtype=theano.config.floatX), borrow=True, name="W_conv")
+            self.W = theano.shared(np.asarray(self.rng.uniform(low=-W_bound, high=W_bound, size=self.filter_shape), dtype=theano.config.floatX), name="W_" + self.name)
         b_values = np.zeros((self.filter_shape[0],), dtype=theano.config.floatX)
-        self.b = theano.shared(value=b_values, borrow=True, name="b_conv")
+        self.b = theano.shared(value=b_values, name="b_conv" + self.name)
         self.params = [self.W, self.b]
 
     def predict(self, new_data):
