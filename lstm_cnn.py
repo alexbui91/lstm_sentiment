@@ -43,19 +43,19 @@ class LSTM_CNN():
         lstm = LSTM(dim=input_width, batch_size=self.batch_size, number_step=maxlen)
         leyer0_output = lstm.feed_foward(layer0_input)
         conv_outputs = list()
-        conv_params = list()
+        conv_nnets = list()
+        # output = layer0_input.flatten()
+        conv_input = layer0_input.reshape((self.batch_size, 1, maxlen, input_width))
         for fter in self.filter_sizes:
             pheight= maxlen - fter + 1
             conv = ConvolutionLayer(rng=rng, filter_shape=(self.kernel, 1, fter, input_width), 
                                     input_shape=(self.batch_size, 1, maxlen, input_width),
                                     poolsize=(pheight, 1), name="conv" + str(fter))
-            output = layer0_input.flatten()
-            output = layer0_input.reshape((self.batch_size, 1, maxlen, input_width))
             #=>batch size * 1 * 100 * width
-            output = conv.predict(output)
+            output = conv.predict(conv_input)
             layer1_input = output.flatten(2)
             conv_outputs.append(layer1_input);
-            conv_params += conv.params
+            conv_nnets.append(conv)
         conv_nnets_output = T.concatenate(conv_outputs, axis=1)
         # lstm.mean_pooling_input(leyer0_output)
         hidden_layer = HiddenLayer(rng, hidden_sizes=[self.kernel*3, self.hidden_sizes[0]], input_vectors=conv_nnets_output, activation=utils.Tanh, name="Hidden_Tanh") 
@@ -67,8 +67,9 @@ class LSTM_CNN():
         full_connect.predict()
 
         cost = full_connect.negative_log_likelihood(y)
-        
-        params = lstm.params + conv_params + hidden_layer.params + hidden_layer_relu.params + full_connect.params
+        params = lstm.params + hidden_layer.params + hidden_layer_relu.params + full_connect.params
+        for conv in conv_nnets:
+            params += conv.params
         # params = hidden_layer.params + hidden_layer_relu.params + full_connect.params
         params_length = len(params)
         #init value for e_grad time 0, e_delta time 0 and delta at time 0
