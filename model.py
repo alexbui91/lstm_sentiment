@@ -9,6 +9,8 @@ import math
 
 from layers import LSTM, HiddenLayer, HiddenLayerDropout, FullConnectLayer
 
+floatX = theano.config.floatX
+
 class Model():
     
     def __init__(self, word_vectors, hidden_sizes=[300, 100, 2], dropout_rate=0.5, \
@@ -20,7 +22,7 @@ class Model():
         self.epochs = epochs
         self.patience = patience
         self.learning_rate = learning_rate
-        self.gamma = theano.shared(np.asarray([properties.gamma, 1 - properties.gamma], dtype=theano.config.floatX))
+        self.gamma = theano.shared(np.asarray([properties.gamma, 1 - properties.gamma], dtype=floatX))
 
     def train(self, train_data, dev_data, test_data, maxlen):
         # tr = tracker.SummaryTracker()
@@ -33,11 +35,11 @@ class Model():
         n_val_batches = len(dev_data[0]) // self.batch_size
         n_test_batches = test_len // self.batch_size
         input_width = self.hidden_sizes[0]
-        x = T.matrix('x')
+        x = T.fmatrix('x')
         y = T.ivector('y')
         index = T.lscalar()
         Words = theano.shared(value=self.word_vectors, name="Words", borrow=True)
-        layer0_input = Words[T.cast(x.flatten(), dtype="int32")].reshape((self.batch_size, maxlen, input_width))
+        layer0_input = T.cast(Words[T.cast(x.flatten(), dtype="int32")], dtype=floatX).reshape((self.batch_size, maxlen, input_width))
         lstm = LSTM(dim=input_width, batch_size=self.batch_size, number_step=maxlen)
         leyer0_output = lstm.feed_foward(layer0_input)
         lstm.mean_pooling_input(leyer0_output)
@@ -146,19 +148,19 @@ class Model():
     def shared_dataset(self, data_xy, borrow=True):
         data_x, data_y = data_xy
         shared_x = theano.shared(np.asarray(
-            data_x, dtype=theano.config.floatX), borrow=borrow)
+            data_x, dtype=floatX), borrow=borrow)
         shared_y = theano.shared(np.asarray(
-            data_y, dtype=theano.config.floatX), borrow=borrow)
+            data_y, dtype=floatX), borrow=borrow)
         return shared_x, T.cast(shared_y, 'int32')
     
 
     def init_hyper_values(self, length, name="N"):
-        # e_grad = theano.shared(np.zeros(length, dtype=theano.config.floatX), name="e_grad" + name)
-        # e_delta = theano.shared(np.zeros(length, dtype=theano.config.floatX), name="e_delta" + name)
-        # delta = theano.shared(np.zeros(length, dtype=theano.config.floatX), name="delta" + name)
-        e_grad = np.zeros(length, dtype=theano.config.floatX)
-        e_delta = np.zeros(length, dtype=theano.config.floatX)
-        delta = np.zeros(length, dtype=theano.config.floatX)
+        # e_grad = theano.shared(np.zeros(length, dtype=floatX), name="e_grad" + name)
+        # e_delta = theano.shared(np.zeros(length, dtype=floatX), name="e_delta" + name)
+        # delta = theano.shared(np.zeros(length, dtype=floatX), name="delta" + name)
+        e_grad = np.zeros(length, dtype=floatX)
+        e_delta = np.zeros(length, dtype=floatX)
+        delta = np.zeros(length, dtype=floatX)
         return e_grad, e_delta, delta
 
     #e_delta_prev is e of delta of two previous step
@@ -199,7 +201,7 @@ class Model():
         return [T.sum(T.nlinalg.ExtractDiag(g)) for g in grads]
 
     def average_value(self, E_prev, grads):
-        # grads_ = [T.cast(i, theano.config.floatX) for i in grads]
+        # grads_ = [T.cast(i, floatX) for i in grads]
         # return E_prev * properties.gamma + (1 - properties.gamma) * grads_
         return [e * properties.gamma + (1 - properties.gamma) * (g**2) for e, g in  zip(E_prev, grads)]
 
