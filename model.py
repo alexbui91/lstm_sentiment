@@ -70,7 +70,7 @@ class Model():
         # grads_d = T.grad(cost_d, params)
         e_grad, e_delta_prev, delta = self.adadelta(grads, e_grad, e_delta_prev)
         # e_grad_d, e_delta_prev_d, delta_d = self.adadelta(grads_d, e_grad_d, e_delta_prev_d, delta_d)
-        grads = [T.cast(x, dtype=theano.config.floatX) for x in delta]
+        grads = delta
         # grad_d = delta_d
         updates = [(p, p - d) for p, d in zip(params, grads)]
         # updates = [(p, p - properties.learning_rate * d) for p, d in zip(params, grads)]
