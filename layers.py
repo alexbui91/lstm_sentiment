@@ -42,7 +42,7 @@ class LSTM(object):
         self.bo = theano.shared(b_values, name="LSTM_bo")
         self.params = [self.Wi, self.Ui, self.bi, self.Wf, self.Uf, self.bf, self.Wc, self.Uc, self.bc, self.Wo, self.Uo, self.bo]
     
-    def set_params(params):
+    def set_params(self, params):
         if len(params) is 12:
             self.params = params
             self.Wi = params[0]

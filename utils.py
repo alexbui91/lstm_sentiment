@@ -98,7 +98,7 @@ def check_array_full_zeros(arr):
             return False
     return True
 
-def save_layer_params(self, layers, name):
+def save_layer_params(layers, name):
     # now = time.time()
     params = [param.get_value() for param in layers.params]
-    utils.save_file('%s.txt' % name, params)
+    save_file('%s.txt' % name, params)

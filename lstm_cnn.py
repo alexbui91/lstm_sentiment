@@ -23,7 +23,7 @@ class LSTM_CNN():
         self.learning_rate = learning_rate
         self.filter_sizes = filter_sizes
         self.kernel = kernel
-        self.lstm_params = self.lstm_params
+        self.lstm_params = lstm_params
         self.gamma = theano.shared(np.asarray([properties.gamma, 1 - properties.gamma], dtype=theano.config.floatX))
 
     def train(self, train_data, dev_data, test_data, maxlen):
