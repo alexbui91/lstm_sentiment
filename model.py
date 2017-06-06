@@ -1,6 +1,5 @@
 import theano
 import theano.tensor as T
-from theano.config import floatX
 import numpy as np
 import time
 import properties
@@ -9,6 +8,8 @@ import math
 # from pympler import tracker
 
 from layers import LSTM, HiddenLayer, HiddenLayerDropout, FullConnectLayer
+
+floatX = theano.config.floatX
 
 class Model():
     
