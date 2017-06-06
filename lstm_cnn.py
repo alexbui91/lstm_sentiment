@@ -90,8 +90,7 @@ class LSTM_CNN(Model):
         e_grad, e_delta_prev, delta = self.adadelta(grads, e_grad, e_delta_prev)
         # e_grad_d, e_delta_prev_d, delta_d = self.adadelta(grads_d, e_grad_d, e_delta_prev_d, delta_d)
         # grads_d = T.grad(cost_d, params)
-        grads = delta
-        print(delta[0].shape, params[0].shape)
+        grads = T.cast(delta, dtype=theano.config.floatX)
         # grad_d = delta_d
         updates = [(p, p - d) for p, d in zip(params, grads)]
         # updates = [(p, p - d - d_) for p, d, d_ in zip(params, grads, grads_d)]
