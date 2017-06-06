@@ -35,7 +35,7 @@ class Model():
         n_val_batches = len(dev_data[0]) // self.batch_size
         n_test_batches = test_len // self.batch_size
         input_width = self.hidden_sizes[0]
-        x = T.fmatrix('x')
+        x = T.matrix('x')
         y = T.ivector('y')
         index = T.lscalar()
         Words = theano.shared(value=self.word_vectors, name="Words", borrow=True)
