@@ -12,7 +12,8 @@ from layers import LSTM, ConvolutionLayer, HiddenLayer, HiddenLayerDropout, Full
 class LSTM_CNN():
     
     def __init__(self, word_vectors, hidden_sizes=[300, 100, 2], dropout_rate=0.5, \
-                batch_size=50, epochs=20, patience=10, learning_rate=0.13, filter_sizes=[2,3,4], kernel=100):
+                batch_size=50, epochs=20, patience=10, learning_rate=0.13, filter_sizes=[2,3,4], \
+                kernel=100, lstm_params=None):
         self.word_vectors = word_vectors
         self.hidden_sizes = hidden_sizes
         self.dropout_rate = dropout_rate
@@ -22,6 +23,7 @@ class LSTM_CNN():
         self.learning_rate = learning_rate
         self.filter_sizes = filter_sizes
         self.kernel = kernel
+        self.lstm_params = self.lstm_params
         self.gamma = theano.shared(np.asarray([properties.gamma, 1 - properties.gamma], dtype=theano.config.floatX))
 
     def train(self, train_data, dev_data, test_data, maxlen):
@@ -40,10 +42,11 @@ class LSTM_CNN():
         index = T.lscalar()
         Words = theano.shared(value=self.word_vectors, name="Words", borrow=True)
         layer0_input = Words[T.cast(x.flatten(), dtype="int32")].reshape((self.batch_size, maxlen, input_width))
-        lstm = LSTM(dim=input_width, batch_size=self.batch_size, number_step=maxlen)
+        lstm = LSTM(dim=input_width, batch_size=self.batch_size, number_step=maxlen, params=self.lstm_params)
         leyer0_output = lstm.feed_foward(layer0_input)
         conv_outputs = list()
         conv_nnets = list()
+        params = list()
         # output = layer0_input.flatten()
         conv_input = layer0_input.reshape((self.batch_size, 1, maxlen, input_width))
         for fter in self.filter_sizes:
@@ -54,6 +57,7 @@ class LSTM_CNN():
             #=>batch size * 1 * 100 * width
             output = conv.predict(conv_input)
             layer1_input = output.flatten(2)
+            params += conv.params
             conv_outputs.append(layer1_input);
             conv_nnets.append(conv)
         conv_nnets_output = T.concatenate(conv_outputs, axis=1)
@@ -67,9 +71,7 @@ class LSTM_CNN():
         full_connect.predict()
 
         cost = full_connect.negative_log_likelihood(y)
-        params = lstm.params + hidden_layer.params + hidden_layer_relu.params + full_connect.params
-        for conv in conv_nnets:
-            params += conv.params
+        params += hidden_layer.params + hidden_layer_relu.params + full_connect.params
         # params = hidden_layer.params + hidden_layer_relu.params + full_connect.params
         params_length = len(params)
         #init value for e_grad time 0, e_delta time 0 and delta at time 0
@@ -154,6 +156,12 @@ class LSTM_CNN():
                 print(('epoch %i, test error of %i example is: %.5f') % (epoch, test_len, average_test_epoch_score * 100.))
             print('epoch: %i, training time: %.2f secs; with cost: %.2f' %
                   (epoch, time.time() - start, epoch_cost_train))
+        utils.save_layer_params(lstm, 'lstm_cb')
+        utils.save_layer_params(hidden_layer, 'hidden_cb')
+        utils.save_layer_params(hidden_layer, 'hidden_relu_cb')
+        utils.save_layer_params(full_connect, 'full_connect_cb')
+        for index, conv in enumerate(conv_nnets):
+            utils.save_layer_params(conv, 'convolution_%s' % index)
 
     def shared_dataset(self, data_xy, borrow=True):
         data_x, data_y = data_xy

@@ -137,6 +137,11 @@ class Model():
                 print(('epoch %i, test error of %i example is: %.5f') % (epoch, test_len, average_test_epoch_score * 100.))
             print('epoch: %i, training time: %.2f secs; with cost: %.2f' %
                   (epoch, time.time() - start, epoch_cost_train))
+        utils.save_layer_params(lstm, 'lstm')
+        utils.save_layer_params(hidden_layer, 'hidden_lstm')
+        utils.save_layer_params(hidden_layer_relu, 'hidden_relu_lstm')
+        utils.save_layer_params(full_connect, 'full_connect_lstm')
+        return lstm.params
 
     def shared_dataset(self, data_xy, borrow=True):
         data_x, data_y = data_xy

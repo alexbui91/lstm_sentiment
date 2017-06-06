@@ -8,13 +8,16 @@ import properties
 
 class LSTM(object):
 
-    def __init__(self, dim, batch_size, number_step):
+    def __init__(self, dim, batch_size, number_step, params=None):
         self.dim = dim
         self.batch_size = batch_size
         self.number_step = number_step
-        self.init_params()
         self.output = None
-    
+        if not params:
+            self.init_params()
+        else:
+            self.set_params(params)
+
     def init_params(self):
         Wi_values = utils.ortho_weight(self.dim)
         self.Wi = theano.shared(Wi_values, name="LSTM_Wi")
@@ -37,8 +40,24 @@ class LSTM(object):
         self.bf = theano.shared(b_values, name="LSTM_bf")
         self.bc = theano.shared(b_values, name="LSTM_bc")
         self.bo = theano.shared(b_values, name="LSTM_bo")
-        self.params = [self.Wi, self.bi, self.Wf, self.bf, self.Wc, self.bc, self.Wo, self.bo]
+        self.params = [self.Wi, self.Ui, self.bi, self.Wf, self.Uf, self.bf, self.Wc, self.Uc, self.bc, self.Wo, self.Uo, self.bo]
     
+    def set_params(params):
+        if len(params) is 12:
+            self.params = params
+            self.Wi = params[0]
+            self.Ui = params[1]
+            self.bi = params[2]
+            self.Wf = params[3]
+            self.Uf = params[4]
+            self.bf = params[5]
+            self.Wc = params[6]
+            self.Uc = params[7]
+            self.bc = params[8]
+            self.Wo = params[9]
+            self.Uo = params[10]
+            self.bo = params[11]
+
     def get_params(self):
         return self.params
     
