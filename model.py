@@ -1,5 +1,6 @@
 import theano
 import theano.tensor as T
+from theano.config import floatX
 import numpy as np
 import time
 import properties
@@ -20,7 +21,7 @@ class Model():
         self.epochs = epochs
         self.patience = patience
         self.learning_rate = learning_rate
-        self.gamma = theano.shared(np.asarray([properties.gamma, 1 - properties.gamma], dtype=theano.config.floatX))
+        self.gamma = theano.shared(np.asarray([properties.gamma, 1 - properties.gamma], dtype=floatX))
 
     def train(self, train_data, dev_data, test_data, maxlen):
         # tr = tracker.SummaryTracker()
@@ -146,19 +147,19 @@ class Model():
     def shared_dataset(self, data_xy, borrow=True):
         data_x, data_y = data_xy
         shared_x = theano.shared(np.asarray(
-            data_x, dtype=theano.config.floatX), borrow=borrow)
+            data_x, dtype=floatX), borrow=borrow)
         shared_y = theano.shared(np.asarray(
-            data_y, dtype=theano.config.floatX), borrow=borrow)
+            data_y, dtype=floatX), borrow=borrow)
         return shared_x, T.cast(shared_y, 'int32')
     
 
     def init_hyper_values(self, length, name="N"):
-        # e_grad = theano.shared(np.zeros(length, dtype=theano.config.floatX), name="e_grad" + name)
-        # e_delta = theano.shared(np.zeros(length, dtype=theano.config.floatX), name="e_delta" + name)
-        # delta = theano.shared(np.zeros(length, dtype=theano.config.floatX), name="delta" + name)
-        e_grad = np.zeros(length, dtype=theano.config.floatX)
-        e_delta = np.zeros(length, dtype=theano.config.floatX)
-        delta = np.zeros(length, dtype=theano.config.floatX)
+        # e_grad = theano.shared(np.zeros(length, dtype=floatX), name="e_grad" + name)
+        # e_delta = theano.shared(np.zeros(length, dtype=floatX), name="e_delta" + name)
+        # delta = theano.shared(np.zeros(length, dtype=floatX), name="delta" + name)
+        e_grad = np.zeros(length, dtype=floatX)
+        e_delta = np.zeros(length, dtype=floatX)
+        delta = np.zeros(length, dtype=floatX)
         return e_grad, e_delta, delta
 
     #e_delta_prev is e of delta of two previous step
@@ -170,7 +171,7 @@ class Model():
         #rms0 = sqrt(epsilon)
         rms_e_del_prev = self.RMS(e_delta)
         #delta of current time
-        delta = [rd / rg * g for rd, rg, g in zip(rms_e_del_prev, rms_g, grads)]
+        delta = [T.mul(T.truediv(rd, rg, dtype=floatX), g, dtype=floatX) for rd, rg, g in zip(rms_e_del_prev, rms_g, grads)]
         #e value of delta of time t
         e_delta_1 = self.average_value(e_delta, delta)
         
@@ -199,12 +200,17 @@ class Model():
         return [T.sum(T.nlinalg.ExtractDiag(g)) for g in grads]
 
     def average_value(self, E_prev, grads):
-        # grads_ = [T.cast(i, theano.config.floatX) for i in grads]
+        # grads_ = [T.cast(i, floatX) for i in grads]
         # return E_prev * properties.gamma + (1 - properties.gamma) * grads_
-        return [e * properties.gamma + (1 - properties.gamma) * (g**2) for e, g in  zip(E_prev, grads)]
+        def e1(e):
+            return T.mul(e, properties.gamma, dtype=floatX)
+        def e2(g):
+            return T.mul((1 - properties.gamma), T.pow(g, 2, dtype=floatX), dtype=floatX)
+        
+        return [e1(e) + e2(g) for e, g in  zip(E_prev, grads)]
 
     def RMS(self, values):
-        return [T.sqrt(e + properties.epsilon) for e in  values]
+        return [T.sqrt(e + properties.epsilon, dtype=floatX) for e in  values]
         # return T.sqrt(values + properties.epsilon)
     
     def cal_delta(self, denominator, grads):
