@@ -47,8 +47,8 @@ class LSTM_CNN():
         conv_outputs = list()
         conv_nnets = list()
         params = list()
-        # output = layer0_input.flatten()
-        conv_input = layer0_input.reshape((self.batch_size, 1, maxlen, input_width))
+        output = T.cast(layer0_input.flatten(), dtype=theano.config.floatX)
+        conv_input = output.reshape((self.batch_size, 1, maxlen, input_width))
         for fter in self.filter_sizes:
             pheight= maxlen - fter + 1
             conv = ConvolutionLayer(rng=rng, filter_shape=(self.kernel, 1, fter, input_width), 
