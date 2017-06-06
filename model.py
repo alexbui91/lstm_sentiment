@@ -172,7 +172,7 @@ class Model():
         #rms0 = sqrt(epsilon)
         rms_e_del_prev = self.RMS(e_delta)
         #delta of current time
-        delta = [rd / rg * g for rd, rg, g in zip(rms_e_del_prev, rms_g, grads)]
+        delta = [T.mul(T.truediv(rd, rg, dtype=floatX), g, dtype=floatX) for rd, rg, g in zip(rms_e_del_prev, rms_g, grads)]
         #e value of delta of time t
         e_delta_1 = self.average_value(e_delta, delta)
         
@@ -203,10 +203,15 @@ class Model():
     def average_value(self, E_prev, grads):
         # grads_ = [T.cast(i, floatX) for i in grads]
         # return E_prev * properties.gamma + (1 - properties.gamma) * grads_
-        return [e * properties.gamma + (1 - properties.gamma) * (g**2) for e, g in  zip(E_prev, grads)]
+        def e1(e):
+            return T.mul(e, properties.gamma, dtype=floatX)
+        def e2(g):
+            return T.mul((1 - properties.gamma), T.pow(g, 2, dtype=floatX), dtype=floatX)
+        
+        return [e1(e) + e2(g) for e, g in  zip(E_prev, grads)]
 
     def RMS(self, values):
-        return [T.sqrt(e + properties.epsilon) for e in  values]
+        return [T.sqrt(e + properties.epsilon, dtype=floatX) for e in  values]
         # return T.sqrt(values + properties.epsilon)
     
     def cal_delta(self, denominator, grads):
