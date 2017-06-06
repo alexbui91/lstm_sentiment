@@ -116,12 +116,14 @@ class LSTM_CNN(Model):
             average_test_epoch_score = 0.
             test_epoch_score = 0.
             best_test = 0.
+            batch_test = 0
             total_test_time = 0
             epoch += 1
             print("Start epoch: %i" % epoch)
             start = time.time()
             for mini_batch in xrange(n_train_batches):
                 current_cost = train_model(mini_batch)
+                batch_test += 1
                 # tr.print_diff()
                 if not math.isnan(current_cost):
                     epoch_cost_train += current_cost
@@ -161,8 +163,8 @@ class LSTM_CNN(Model):
                     print('Best test error: %f' % best_test)
                 average_test_epoch_score = test_epoch_score / total_test_time
                 print(('epoch %i, test error of %i example is: %.5f') % (epoch, test_len, average_test_epoch_score * 100.))
-            print('epoch: %i, training time: %.2f secs; with cost: %.2f' %
-                  (epoch, time.time() - start, epoch_cost_train))
+            if batch_test:
+                print('epoch: %i, training time: %.2f secs; with avg cost: %.2f' % (epoch, time.time() - start, epoch_cost_train / batch_test))
         utils.save_layer_params(lstm, 'lstm_cb')
         utils.save_layer_params(hidden_layer, 'hidden_cb')
         utils.save_layer_params(hidden_layer, 'hidden_relu_cb')
