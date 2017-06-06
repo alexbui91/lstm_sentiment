@@ -94,7 +94,7 @@ class LSTM_CNN(Model):
         # grad_d = delta_d
         # updates = [(p, p - d) for p, d in zip(params, grads)]
         # updates = [(p, p - d - d_) for p, d, d_ in zip(params, grads, grads_d)]
-        updates = [(p, p - properties.learning_rate * d) for p, d in zip(params, grads)]
+        updates = [(p, p - self.learning_rate * d) for p, d in zip(params, grads)]
         train_model = theano.function([index], cost, updates=updates, givens={
             x: train_x[(index * self.batch_size):((index + 1) * self.batch_size)],
             y: train_y[(index * self.batch_size):((index + 1) * self.batch_size)]
