@@ -26,8 +26,8 @@ def exe(word_vectors_file, vector_preloaded_path, train_path, dev_path, test_pat
         maxlen = properties.maxlen
     lstm = Model(word_vectors, hidden_sizes=hidden_sizes, epochs=1)
     lstm_params = lstm.train(train, dev, test, maxlen)
-    # combined = LSTM_CNN(word_vectors, hidden_sizes=hidden_sizes, epochs=100, lstm_params=lstm_params)
-    # combined.train(train, dev, test, maxlen)
+    combined = LSTM_CNN(word_vectors, hidden_sizes=hidden_sizes, epochs=10, lstm_params=lstm_params)
+    combined.train(train, dev, test, maxlen)
 
 #python main.py --train='../data/50d.training_twitter_full.txt' --dev='../data/50d.dev_twitter_small.txt' --test='../data/50d.test_twitter.txt' --vectors='../data/glove.6B.50d.txt' --plvec='../data'
 
