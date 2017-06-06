@@ -8,8 +8,9 @@ import math
 # from pympler import tracker
 
 from layers import LSTM, ConvolutionLayer, HiddenLayer, HiddenLayerDropout, FullConnectLayer
+from model import Model
 
-class LSTM_CNN():
+class LSTM_CNN(Model):
     
     def __init__(self, word_vectors, hidden_sizes=[300, 100, 2], dropout_rate=0.5, \
                 batch_size=50, epochs=20, patience=10, learning_rate=0.13, filter_sizes=[2,3,4], \
@@ -163,70 +164,3 @@ class LSTM_CNN():
         utils.save_layer_params(full_connect, 'full_connect_cb')
         for index, conv in enumerate(conv_nnets):
             utils.save_layer_params(conv, 'convolution_%s' % index)
-
-    def shared_dataset(self, data_xy, borrow=True):
-        data_x, data_y = data_xy
-        shared_x = theano.shared(np.asarray(
-            data_x, dtype=theano.config.floatX), borrow=borrow)
-        shared_y = theano.shared(np.asarray(
-            data_y, dtype=theano.config.floatX), borrow=borrow)
-        return shared_x, T.cast(shared_y, 'int32')
-    
-
-    def init_hyper_values(self, length, name="N"):
-        # e_grad = theano.shared(np.zeros(length, dtype=theano.config.floatX), name="e_grad" + name)
-        # e_delta = theano.shared(np.zeros(length, dtype=theano.config.floatX), name="e_delta" + name)
-        # delta = theano.shared(np.zeros(length, dtype=theano.config.floatX), name="delta" + name)
-        e_grad = np.zeros(length, dtype=theano.config.floatX)
-        e_delta = np.zeros(length, dtype=theano.config.floatX)
-        delta = np.zeros(length, dtype=theano.config.floatX)
-        return e_grad, e_delta, delta
-
-    #e_delta_prev is e of delta of two previous step
-    def adadelta(self, grads, e_g_prev, e_delta):
-        #calculate e value for grad from e g previous and current grad
-        e_grad = self.average_value(e_g_prev, grads)
-        #calculate rms for grad
-        rms_g = self.RMS(e_grad)
-        #rms0 = sqrt(epsilon)
-        rms_e_del_prev = self.RMS(e_delta)
-        #delta of current time
-        delta = [rd / rg * g for rd, rg, g in zip(rms_e_del_prev, rms_g, grads)]
-        #e value of delta of time t
-        e_delta_1 = self.average_value(e_delta, delta)
-        
-        return e_grad, e_delta_1, delta
-    
-    def rms_prop(self, grads, e_g_prev):
-        e_grad = self.average_value(e_g_prev, grads)
-        rms_g = self.RMS(e_grad)
-        delta = delta = self.cal_delta(rms_g, grads)
-        return e_grad, delta
-
-    def adagrad(self, grads):
-        G = self.sum_diag(grads)
-        rms_g = self.RMS(G)
-        delta = self.cal_delta(rms_g, grads)
-
-    def momentum(self, grads, v_prev):
-        #velocity is delta
-        velocity = self.get_velocity(grads, v_prev)
-        return velocity
-
-    def get_velocity(self, grads, v_prev):
-        return [v + properties.n_gamma + properties.learning_rate * g for g, v in zip(grads, v_prev)]
-
-    def sum_diag(self, grads):
-        return [T.sum(T.nlinalg.ExtractDiag(g)) for g in grads]
-
-    def average_value(self, E_prev, grads):
-        # grads_ = [T.cast(i, theano.config.floatX) for i in grads]
-        # return E_prev * properties.gamma + (1 - properties.gamma) * grads_
-        return [e * properties.gamma + (1 - properties.gamma) * (g**2) for e, g in  zip(E_prev, grads)]
-
-    def RMS(self, values):
-        return [T.sqrt(e + properties.epsilon) for e in  values]
-        # return T.sqrt(values + properties.epsilon)
-    
-    def cal_delta(self, denominator, grads):
-        return [properties.learning_rate / rms * g for rms, g in zip(denominator, grads)]
