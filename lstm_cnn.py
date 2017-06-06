@@ -86,12 +86,13 @@ class LSTM_CNN():
         # full_connect.predict()
         # cost_d = full_connect.negative_log_likelihood(y)
         #apply gradient to cost_d
-        # grads_d = T.grad(cost_d, params)
         e_grad, e_delta_prev, delta = self.adadelta(grads, e_grad, e_delta_prev)
         # e_grad_d, e_delta_prev_d, delta_d = self.adadelta(grads_d, e_grad_d, e_delta_prev_d, delta_d)
-        #grads = delta
+        # grads_d = T.grad(cost_d, params)
+        grads = delta
         # grad_d = delta_d
         updates = [(p, p - d) for p, d in zip(params, grads)]
+        # updates = [(p, p - d - d_) for p, d, d_ in zip(params, grads, grads_d)]
         # updates = [(p, p - properties.learning_rate * d) for p, d in zip(params, grads)]
         train_model = theano.function([index], cost, updates=updates, givens={
             x: train_x[(index * self.batch_size):((index + 1) * self.batch_size)],
