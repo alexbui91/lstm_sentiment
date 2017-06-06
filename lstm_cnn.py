@@ -115,6 +115,7 @@ class LSTM_CNN(Model):
             epoch_cost_train = 0.
             average_test_epoch_score = 0.
             test_epoch_score = 0.
+            best_test = 0.
             total_test_time = 0
             epoch += 1
             print("Start epoch: %i" % epoch)
@@ -145,7 +146,9 @@ class LSTM_CNN(Model):
                         for i in range(n_test_batches)
                     ]
                     avg_test_lost = np.mean(test_losses)
-                    print("test lost: %f" % avg_test_lost)
+                    if best_test < avg_test_lost:
+                        best_test = avg_test_lost
+                    # print("test lost: %f" % avg_test_lost)
                     test_epoch_score += avg_test_lost
                     total_test_time += 1
                 else:
@@ -154,6 +157,8 @@ class LSTM_CNN(Model):
                     stop_count = 0
                     break
             if total_test_time:
+                if best_test:
+                    print('Best test error: %f' % best_test)
                 average_test_epoch_score = test_epoch_score / total_test_time
                 print(('epoch %i, test error of %i example is: %.5f') % (epoch, test_len, average_test_epoch_score * 100.))
             print('epoch: %i, training time: %.2f secs; with cost: %.2f' %
