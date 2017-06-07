@@ -89,14 +89,14 @@ class LSTM_CNN(Model):
         # full_connect.predict()
         # cost_d = full_connect.negative_log_likelihood(y)
         #apply gradient to cost_d
-        e_grad, e_delta_prev, delta = self.adadelta(grads, e_grad, e_delta_prev)
+        # e_grad, e_delta_prev, delta = self.adadelta(grads, e_grad, e_delta_prev)
         # e_grad_d, e_delta_prev_d, delta_d = self.adadelta(grads_d, e_grad_d, e_delta_prev_d, delta_d)
         # grads_d = T.grad(cost_d, params)
-        grads = delta
+        # grads = delta
         # grad_d = delta_d
-        updates = [(p, p - d) for p, d in zip(params, grads)]
+        # updates = [(p, p - d) for p, d in zip(params, grads)]
         # updates = [(p, p - d - d_) for p, d, d_ in zip(params, grads, grads_d)]
-        # updates = [(p, p - properties.learning_rate * d) for p, d in zip(params, grads)]
+        updates = [(p, p - self.learning_rate * d) for p, d in zip(params, grads)]
         train_model = theano.function([index], cost, updates=updates, givens={
             x: train_x[(index * self.batch_size):((index + 1) * self.batch_size)],
             y: train_y[(index * self.batch_size):((index + 1) * self.batch_size)]
@@ -117,12 +117,15 @@ class LSTM_CNN(Model):
             epoch_cost_train = 0.
             average_test_epoch_score = 0.
             test_epoch_score = 0.
+            best_test = 0.
+            batch_test = 0
             total_test_time = 0
             epoch += 1
             print("Start epoch: %i" % epoch)
             start = time.time()
             for mini_batch in xrange(n_train_batches):
                 current_cost = train_model(mini_batch)
+                batch_test += 1
                 # tr.print_diff()
                 if not math.isnan(current_cost):
                     epoch_cost_train += current_cost
@@ -147,7 +150,9 @@ class LSTM_CNN(Model):
                         for i in range(n_test_batches)
                     ]
                     avg_test_lost = np.mean(test_losses)
-                    print("test lost: %f" % avg_test_lost)
+                    if best_test < avg_test_lost:
+                        best_test = avg_test_lost
+                    # print("test lost: %f" % avg_test_lost)
                     test_epoch_score += avg_test_lost
                     total_test_time += 1
                 else:
@@ -156,10 +161,12 @@ class LSTM_CNN(Model):
                     stop_count = 0
                     break
             if total_test_time:
+                if best_test:
+                    print('Best test error: %f' % best_test)
                 average_test_epoch_score = test_epoch_score / total_test_time
                 print(('epoch %i, test error of %i example is: %.5f') % (epoch, test_len, average_test_epoch_score * 100.))
-            print('epoch: %i, training time: %.2f secs; with cost: %.2f' %
-                  (epoch, time.time() - start, epoch_cost_train))
+            if batch_test:
+                print('epoch: %i, training time: %.2f secs; with avg cost: %.2f' % (epoch, time.time() - start, epoch_cost_train / batch_test))
         utils.save_layer_params(lstm, 'lstm_cb')
         utils.save_layer_params(hidden_layer, 'hidden_cb')
         utils.save_layer_params(hidden_layer, 'hidden_relu_cb')
