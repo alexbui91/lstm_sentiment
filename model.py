@@ -153,15 +153,18 @@ class Model():
         return lstm.params
 
     def build_test_model(self, data):
+        rng = np.random.RandomState(3435)
         lstm_params, hidden_params, hidden_relu_params, full_connect_params = self.load_trained_params()
-        data_x, data_y, max_len = data
+        print(hidden_params)
+        data_x, data_y, maxlen = data
         test_len = len(data_x)
         n_test_batches = test_len // self.batch_size
         x = T.matrix('x')
         y = T.ivector('y')
         index = T.lscalar()
         Words = theano.shared(value=self.word_vectors, name="Words", borrow=True)
-        layer0_input = T.cast(Words[T.cast(x.flatten(), dtype="int32")], dtype=floatX).reshape((self.batch_size, maxlen, self.img_width))
+        input_width = self.hidden_sizes[0]
+        layer0_input = T.cast(Words[T.cast(x.flatten(), dtype="int32")], dtype=floatX).reshape((self.batch_size, maxlen, input_width))
         lstm = LSTM(dim=input_width, batch_size=self.batch_size, number_step=maxlen, params=lstm_params)
         layer0_input = lstm.feed_foward(layer0_input)
         lstm.mean_pooling_input(layer0_input)

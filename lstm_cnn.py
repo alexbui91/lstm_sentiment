@@ -169,22 +169,24 @@ class LSTM_CNN(Model):
                 print('epoch: %i, training time: %.2f secs; with avg cost: %.2f' % (epoch, time.time() - start, epoch_cost_train / batch_test))
         utils.save_layer_params(lstm, 'lstm_cb')
         utils.save_layer_params(hidden_layer, 'hidden_cb')
-        utils.save_layer_params(hidden_layer, 'hidden_relu_cb')
+        utils.save_layer_params(hidden_layer_relu, 'hidden_relu_cb')
         utils.save_layer_params(full_connect, 'full_connect_cb')
         for index, conv in enumerate(conv_nnets):
             utils.save_layer_params(conv, 'convolution_%s' % index)
     
     def build_test_model(self, data):
+        rng = np.random.RandomState(3435)
         lstm_params, hidden_params, hidden_relu_params, full_connect_params, convs = self.load_trained_params()
-        data_x, data_y, max_len = data
+        data_x, data_y, maxlen = data
         test_len = len(data_x)
         n_test_batches = test_len // self.batch_size
         x = T.matrix('x')
         y = T.ivector('y')
         index = T.lscalar()
         Words = theano.shared(value=self.word_vectors, name="Words", borrow=True)
+        input_width = self.hidden_sizes[0]
         layer0_input = Words[T.cast(x.flatten(), dtype="int32")].reshape((self.batch_size, maxlen, input_width))
-        lstm = LSTM(dim=input_width, batch_size=self.batch_size, number_step=maxlen, params=self.lstm_params)
+        lstm = LSTM(dim=input_width, batch_size=self.batch_size, number_step=maxlen, params=lstm_params)
         leyer0_output = lstm.feed_foward(layer0_input)
         conv_outputs = list()
         conv_nnets = list()
@@ -234,9 +236,9 @@ class LSTM_CNN(Model):
 
     def load_trained_params(self):
         lstm = utils.load_file('lstm_cb.txt')
-        hidden_lstm = utils.load_file('hidden_lstm_cb.txt')
-        hidden_relu_lstm = utils.load_file('hidden_relu_lstm_cb.txt')
-        full_connect_lstm = utils.load_file('full_connect_lstm_cb.txt')
+        hidden_lstm = utils.load_file('hidden_cb.txt')
+        hidden_relu_lstm = utils.load_file('hidden_relu_cb.txt')
+        full_connect_lstm = utils.load_file('full_connect_cb.txt')
         convs = list()
         for x in range(len(self.filter_sizes)):
             conv = utils.load_file('convolution_%s.txt' % x)

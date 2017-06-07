@@ -49,6 +49,6 @@ if __name__ == '__main__':
 
     exe(args.vectors, args.plvec, args.train, args.dev, args.test, args.hs, args.max, args.pep, args.fep, args.mix)
 
-    del(word_vectors)
-    del(vocabs)
+    del word_vectors 
+    del vocabs
 
