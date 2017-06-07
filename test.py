@@ -16,7 +16,7 @@ def exe(word_vectors_file, vector_preloaded_path, test_path, sent, hidden_sizes,
         word_vectors, vocabs = utils.loadWordVectors(word_vectors_file, vector_preloaded_path)
     if sent:
         if sent: 
-            test_x = utils.make_sentence_idx(vocabs, sent.lower(), maxlen)
+            test_x = [utils.make_sentence_idx(vocabs, sent.lower(), maxlen)]
             test_y = [1]
     else: 
         #auto test path_file
@@ -27,8 +27,8 @@ def exe(word_vectors_file, vector_preloaded_path, test_path, sent, hidden_sizes,
     else:
         lstm = Model(word_vectors, hidden_sizes=hidden_sizes)
         errors = lstm.build_test_model((test_x, test_y, maxlen))
-    if sent: 
-	    pred = errors
+    if sent:
+        pred = errors
         if pred:
       	    print "sentiment is positive"
         else: 
