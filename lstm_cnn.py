@@ -194,7 +194,7 @@ class LSTM_CNN(Model):
         output = T.cast(layer0_input.flatten(), dtype=floatX)
         conv_input = output.reshape((self.batch_size, 1, maxlen, input_width))
         for x, p_conv in enumerate(convs):
-            pheight= maxlen - fter + 1
+            pheight= maxlen - self.filter_sizes[x] + 1
             conv = ConvolutionLayer(rng=rng, filter_shape=(self.kernel, 1, self.filter_sizes[x], input_width), 
                                     input_shape=(self.batch_size, 1, maxlen, input_width),
                                     poolsize=(pheight, 1), name="conv" + str(self.filter_sizes[x]), W=p_conv[0], b=p_conv[1])
