@@ -28,7 +28,7 @@ def exe(word_vectors_file, vector_preloaded_path, test_path, sent, hidden_sizes,
         lstm = Model(word_vectors, hidden_sizes=hidden_sizes)
         errors = lstm.build_test_model((test_x, test_y, maxlen))
     if sent: 
-	pred = errors
+	    pred = errors
         if pred:
       	    print "sentiment is positive"
         else: 

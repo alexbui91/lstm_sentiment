@@ -178,6 +178,7 @@ class LSTM_CNN(Model):
         rng = np.random.RandomState(3435)
         lstm_params, hidden_params, hidden_relu_params, full_connect_params, convs = self.load_trained_params()
         data_x, data_y, maxlen = data
+        print(data_y)
         test_len = len(data_x)
         n_test_batches = test_len // self.batch_size
         x = T.matrix('x')
