@@ -13,7 +13,7 @@ class LSTM(object):
         self.batch_size = batch_size
         self.number_step = number_step
         self.output = None
-        if params is not None:
+        if params is None:
             self.init_params()
         else:
             self.set_params(params)
@@ -106,7 +106,7 @@ class ConvolutionLayer(NetworkLayer):
         self.poolsize = poolsize
         self.rng = rng
         self.name = name
-        if W is not None or b is not None:
+        if W is None or b is None:
             self.initHyperParams()
         else:
             self.initHyperParamsFromValue(W, b, name=name)
@@ -156,7 +156,7 @@ class HiddenLayer(NetworkLayer):
         self.b = b
         self.name = name
         self.output = None
-        if self.W is not None or self.b is not None:
+        if self.W is None or self.b is None:
             self.init_params()
         else: 
             self.initHyperParamsFromValue(W, b, 'hidden_layer')
@@ -193,7 +193,7 @@ class FullConnectLayer(NetworkLayer):
         self.rng = rng
         self.layers_size = layers_size
         self.input_vector = input_vector
-        if W is not None or b is not None:
+        if W is None or b is None:
             self.initHyperParams()
         else:
             self.initHyperParamsFromValue(W, b, 'full_connect')

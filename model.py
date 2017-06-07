@@ -1,4 +1,5 @@
 import theano
+import lasagne
 import theano.tensor as T
 import numpy as np
 import time
@@ -155,7 +156,6 @@ class Model():
     def build_test_model(self, data):
         rng = np.random.RandomState(3435)
         lstm_params, hidden_params, hidden_relu_params, full_connect_params = self.load_trained_params()
-        print(hidden_params)
         data_x, data_y, maxlen = data
         test_len = len(data_x)
         n_test_batches = test_len // self.batch_size
@@ -263,7 +263,8 @@ class Model():
     def average_value(self, E_prev, grads):
         # grads_ = [T.cast(i, floatX) for i in grads]
         # return E_prev * properties.gamma + (1 - properties.gamma) * grads_
-        return [e * properties.gamma + (1 - properties.gamma) * (g**2) for e, g in  zip(E_prev, grads)]
+        print(type(properties.gamma))
+        return [e * properties.gamma + (lasagne.utils.floatX(1.) - properties.gamma) * (g**2) for e, g in  zip(E_prev, grads)]
 
     def RMS(self, values):
         return [T.sqrt(e + properties.epsilon) for e in  values]
