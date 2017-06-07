@@ -23,7 +23,6 @@ class Model():
         self.epochs = epochs
         self.patience = patience
         self.learning_rate = learning_rate
-        self.gamma = theano.shared(np.asarray([properties.gamma, 1 - properties.gamma], dtype=floatX))
 
     def train(self, train_data, dev_data, test_data, maxlen):
         # tr = tracker.SummaryTracker()
@@ -71,12 +70,12 @@ class Model():
         # cost_d = full_connect.negative_log_likelihood(y)
         #apply gradient to cost_d
         # grads_d = T.grad(cost_d, params)
-        # e_grad, e_delta_prev, delta = self.adadelta(grads, e_grad, e_delta_prev)
+        e_grad, e_delta_prev, delta = self.adadelta(grads, e_grad, e_delta_prev)
         # e_grad_d, e_delta_prev_d, delta_d = self.adadelta(grads_d, e_grad_d, e_delta_prev_d, delta_d)
-        # grads = delta
+        grads = delta
         # grad_d = delta_d
-        # updates = [(p, p - d) for p, d in zip(params, grads)]
-        updates = [(p, p - self.learning_rate * d) for p, d in zip(params, grads)]
+        updates = [(p, p - d) for p, d in zip(params, grads)]
+        # updates = [(p, p - self.learning_rate * d) for p, d in zip(params, grads)]
         train_model = theano.function([index], cost, updates=updates, givens={
             x: train_x[(index * self.batch_size):((index + 1) * self.batch_size)],
             y: train_y[(index * self.batch_size):((index + 1) * self.batch_size)]
@@ -263,11 +262,11 @@ class Model():
     def average_value(self, E_prev, grads):
         # grads_ = [T.cast(i, floatX) for i in grads]
         # return E_prev * properties.gamma + (1 - properties.gamma) * grads_
-        print(type(properties.gamma))
-        return [e * properties.gamma + (lasagne.utils.floatX(1.) - properties.gamma) * (g**2) for e, g in  zip(E_prev, grads)]
+        f_gm = lasagne.utils.floatX(properties.gamma)
+        return [e * f_gm + (lasagne.utils.floatX(1.) - f_gm) * (g**2.) for e, g in  zip(E_prev, grads)]
 
     def RMS(self, values):
-        return [T.sqrt(e + properties.epsilon) for e in  values]
+        return [T.sqrt(e + lasagne.utils.floatX(properties.epsilon)) for e in  values]
         # return T.sqrt(values + properties.epsilon)
     
     def cal_delta(self, denominator, grads):
