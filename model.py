@@ -39,7 +39,7 @@ class Model():
         y = T.ivector('y')
         index = T.lscalar()
         Words = theano.shared(value=self.word_vectors, name="Words", borrow=True)
-        layer0_input = T.cast(Words[T.cast(x.flatten(), dtype="int32")], dtype=floatX).reshape((self.batch_size, maxlen, input_width))
+        layer0_input = Words[T.cast(x.flatten(), dtype="int32")].reshape((self.batch_size, maxlen, input_width))
         lstm = LSTM(dim=input_width, batch_size=self.batch_size, number_step=maxlen)
         leyer0_output = lstm.feed_foward(layer0_input)
         lstm.mean_pooling_input(leyer0_output)
@@ -144,6 +144,56 @@ class Model():
         utils.save_layer_params(hidden_layer_relu, 'hidden_relu_lstm')
         utils.save_layer_params(full_connect, 'full_connect_lstm')
         return lstm.params
+
+    def build_test_model(self, data):
+        lstm_params, hidden_params, hidden_relu_params, full_connect_params = self.load_trained_params()
+        data_x, data_y, max_len = data
+        test_len = len(data_x)
+        n_test_batches = test_len // self.batch_size
+        x = T.matrix('x')
+        y = T.ivector('y')
+        index = T.lscalar()
+        Words = theano.shared(value=self.word_vectors, name="Words", borrow=True)
+        layer0_input = T.cast(Words[T.cast(x.flatten(), dtype="int32")], dtype=floatX).reshape((self.batch_size, maxlen, self.img_width))
+        lstm = LSTM(dim=input_width, batch_size=self.batch_size, number_step=maxlen, params=lstm_params)
+        layer0_input = lstm.feed_foward(layer0_input)
+        lstm.mean_pooling_input(layer0_input)
+        hidden_sizes = [self.hidden_sizes[0], self.hidden_sizes[0]]
+        hidden_layer = HiddenLayer(rng, hidden_sizes=hidden_sizes, input_vectors=lstm.output, activation=utils.Tanh, name="Hidden_Tanh", W=hidden_params[0], b=hidden_params[1]) 
+        hidden_layer.predict()
+        hidden_layer_relu = HiddenLayer(rng, hidden_sizes=hidden_sizes, input_vectors=hidden_layer.output, W=hidden_relu_params[0], b=hidden_relu_params[1])
+        hidden_layer_relu.predict()
+        # hidden_layer_dropout = HiddenLayerDropout(rng, hidden_sizes=self.hidden_sizes[:2], input_vectors=lstm.output, W=hidden_layer.W, b=hidden_layer.b)
+        full_connect = FullConnectLayer(rng, layers_size=[self.hidden_sizes[0], self.hidden_sizes[-1]], 
+                                        input_vector=hidden_layer_relu.output, W=full_connect_params[0], b=full_connect_params[1])
+        full_connect.predict()
+        test_data_x = theano.shared(np.asarray(data_x, dtype=floatX), borrow=True)
+        test_data_y = theano.shared(np.asarray(data_y, dtype='int32'), borrow=True)
+      
+        errors = 0.
+        if test_len == 1:
+            test_model = theano.function([index],outputs=full_connect.get_predict(), on_unused_input='ignore', givens={
+                x: test_data_x[index * self.batch_size: (index + 1) * self.batch_size],
+                y: test_data_y[index * self.batch_size: (index + 1) * self.batch_size]
+            })
+            index = 0
+            avg_errors = test_model(index)
+        else:
+            test_model = theano.function([index], outputs=full_connect.errors(y), givens={
+                x: test_data_x[index * self.batch_size: (index + 1) * self.batch_size],
+                y: test_data_y[index * self.batch_size: (index + 1) * self.batch_size]
+            })
+            for i in xrange(n_test_batches):
+                errors += test_model(i)
+            avg_errors = errors / n_test_batches
+        return avg_errors
+
+    def load_trained_params(self):
+        lstm = utils.load_file('lstm.txt')
+        hidden_lstm = utils.load_file('hidden_lstm.txt')
+        hidden_relu_lstm = utils.load_file('hidden_relu_lstm.txt')
+        full_connect_lstm = utils.load_file('full_connect_lstm.txt')
+        return lstm, hidden_lstm, hidden_relu_lstm, full_connect_lstm
 
     def shared_dataset(self, data_xy, borrow=True):
         data_x, data_y = data_xy

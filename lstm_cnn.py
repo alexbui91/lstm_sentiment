@@ -10,6 +10,8 @@ import math
 from layers import LSTM, ConvolutionLayer, HiddenLayer, HiddenLayerDropout, FullConnectLayer
 from model import Model
 
+floatX = theano.config.floatX
+
 class LSTM_CNN(Model):
     
     def __init__(self, word_vectors, hidden_sizes=[300, 100, 2], dropout_rate=0.5, \
@@ -25,7 +27,7 @@ class LSTM_CNN(Model):
         self.filter_sizes = filter_sizes
         self.kernel = kernel
         self.lstm_params = lstm_params
-        self.gamma = theano.shared(np.asarray([properties.gamma, 1 - properties.gamma], dtype=theano.config.floatX))
+        self.gamma = theano.shared(np.asarray([properties.gamma, 1 - properties.gamma], dtype=floatX))
 
     def train(self, train_data, dev_data, test_data, maxlen):
         # tr = tracker.SummaryTracker()
@@ -48,7 +50,7 @@ class LSTM_CNN(Model):
         conv_outputs = list()
         conv_nnets = list()
         params = list()
-        output = T.cast(layer0_input.flatten(), dtype=theano.config.floatX)
+        output = T.cast(layer0_input.flatten(), dtype=floatX)
         conv_input = output.reshape((self.batch_size, 1, maxlen, input_width))
         for fter in self.filter_sizes:
             pheight= maxlen - fter + 1
@@ -164,3 +166,72 @@ class LSTM_CNN(Model):
         utils.save_layer_params(full_connect, 'full_connect_cb')
         for index, conv in enumerate(conv_nnets):
             utils.save_layer_params(conv, 'convolution_%s' % index)
+    
+    def build_test_model(self, data):
+        lstm_params, hidden_params, hidden_relu_params, full_connect_params, convs = self.load_trained_params()
+        data_x, data_y, max_len = data
+        test_len = len(data_x)
+        n_test_batches = test_len // self.batch_size
+        x = T.matrix('x')
+        y = T.ivector('y')
+        index = T.lscalar()
+        Words = theano.shared(value=self.word_vectors, name="Words", borrow=True)
+        layer0_input = Words[T.cast(x.flatten(), dtype="int32")].reshape((self.batch_size, maxlen, input_width))
+        lstm = LSTM(dim=input_width, batch_size=self.batch_size, number_step=maxlen, params=self.lstm_params)
+        leyer0_output = lstm.feed_foward(layer0_input)
+        conv_outputs = list()
+        conv_nnets = list()
+        params = list()
+        output = T.cast(layer0_input.flatten(), dtype=floatX)
+        conv_input = output.reshape((self.batch_size, 1, maxlen, input_width))
+        for fter in self.filter_sizes:
+            pheight= maxlen - fter + 1
+            conv = ConvolutionLayer(rng=rng, filter_shape=(self.kernel, 1, fter, input_width), 
+                                    input_shape=(self.batch_size, 1, maxlen, input_width),
+                                    poolsize=(pheight, 1), name="conv" + str(fter))
+            #=>batch size * 1 * 100 * width
+            output = conv.predict(conv_input)
+            layer1_input = output.flatten(2)
+            params += conv.params
+            conv_outputs.append(layer1_input);
+            conv_nnets.append(conv)
+        conv_nnets_output = T.concatenate(conv_outputs, axis=1)
+        hidden_layer = HiddenLayer(rng, hidden_sizes=[self.kernel*3, self.hidden_sizes[0]], input_vectors=conv_nnets_output, activation=utils.Tanh, name="Hidden_Tanh", W=hidden_params[0], b=hidden_params[1]) 
+        hidden_layer.predict()
+        hidden_layer_relu = HiddenLayer(rng, hidden_sizes=[self.hidden_sizes[0], self.hidden_sizes[0]], input_vectors=hidden_layer.output, W=hidden_relu_params[0], b=hidden_relu_params[1])
+        hidden_layer_relu.predict()
+        # hidden_layer_dropout = HiddenLayerDropout(rng, hidden_sizes=self.hidden_sizes[:2], input_vectors=lstm.output, W=hidden_layer.W, b=hidden_layer.b)
+        full_connect = FullConnectLayer(rng, layers_size=[self.hidden_sizes[0], self.hidden_sizes[-1]], 
+                                        input_vector=hidden_layer_relu.output, W=full_connect_params[0], b=full_connect_params[1])
+        full_connect.predict()
+        test_data_x = theano.shared(np.asarray(data_x, dtype=floatX), borrow=True)
+        test_data_y = theano.shared(np.asarray(data_y, dtype='int32'), borrow=True)
+      
+        errors = 0.
+        if test_len == 1:
+            test_model = theano.function([index],outputs=full_connect.get_predict(), on_unused_input='ignore', givens={
+                x: test_data_x[index * self.batch_size: (index + 1) * self.batch_size],
+                y: test_data_y[index * self.batch_size: (index + 1) * self.batch_size]
+            })
+            index = 0
+            avg_errors = test_model(index)
+        else:
+            test_model = theano.function([index], outputs=full_connect.errors(y), givens={
+                x: test_data_x[index * self.batch_size: (index + 1) * self.batch_size],
+                y: test_data_y[index * self.batch_size: (index + 1) * self.batch_size]
+            })
+            for i in xrange(n_test_batches):
+                errors += test_model(i)
+            avg_errors = errors / n_test_batches
+        return avg_errors
+
+    def load_trained_params(self):
+        lstm = utils.load_file('lstm_cb.txt')
+        hidden_lstm = utils.load_file('hidden_lstm_cb.txt')
+        hidden_relu_lstm = utils.load_file('hidden_relu_lstm_cb.txt')
+        full_connect_lstm = utils.load_file('full_connect_lstm_cb.txt')
+        convs = list()
+        for x in range(len(self.filter_sizes)):
+            conv = utils.load_file('convolution_%s.txt' % x)
+            convs.append(conv)
+        return lstm, hidden_lstm, hidden_relu_lstm, full_connect_lstm, convs
