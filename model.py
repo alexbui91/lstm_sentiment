@@ -22,6 +22,7 @@ class Model():
         self.batch_size = batch_size
         self.epochs = epochs
         self.patience = patience
+        self.patience_frq = 2
         self.learning_rate = learning_rate
 
     def train(self, train_data, dev_data, test_data, maxlen):
@@ -88,64 +89,46 @@ class Model():
             x: test_x[index * self.batch_size: (index + 1) * self.batch_size],
             y: test_y[index * self.batch_size: (index + 1) * self.batch_size]
         })
+        validation_frequency = min(n_train_batches, self.patience // 2)
         val_batch_lost = 1.
         best_batch_lost = 1.
         stop_count = 0
         epoch = 0
-        while(epoch < self.epochs):
+        done_loop = False
+        current_time_step = 0
+        improve_threshold = 0.995
+        best_test_lost = 0
+        while(epoch < self.epochs and done_loop is not True):
             epoch_cost_train = 0.
-            average_test_epoch_score = 0.
-            test_epoch_score = 0.
-            best_test = 0.
-            batch_test = 0
-            total_test_time = 0
             epoch += 1
+            batch_train = 0
             print("Start epoch: %i" % epoch)
             start = time.time()
             for mini_batch in xrange(n_train_batches):
-                current_cost = train_model(mini_batch)
-                batch_test += 1
-                # tr.print_diff()
-                if not math.isnan(current_cost):
-                    epoch_cost_train += current_cost
-                # perform early stopping to avoid overfitting (check with frequency or check every iteration)
-                # iter = (epoch - 1) * n_train_batches + minibatch_index
-                # if (iter + 1) % validation_frequency == 0
-                # eval
-                val_losses = [val_model(i) for i in xrange(n_val_batches)]
-                val_losses = np.array(val_losses)
-                # in valuation phase (dev phase, error need to be reduce gradually and not upturn)
-                # if val_gain > best_gain => re assign and stop_count = 0 else
-                # stop_count ++.
-                # average of losses during evaluate => this number may be larger than 1
-                val_batch_lost = np.mean(val_losses)
-                #print("validate losses: ", val_batch_lost)
-                if val_batch_lost < best_batch_lost:
-                    best_batch_lost = val_batch_lost
-                    stop_count = 0
-                    # test it on the test set
-                    test_losses = [
-                        test_model(i)
-                        for i in range(n_test_batches)
-                    ]
-                    avg_test_lost = np.mean(test_losses)
-                    if best_test > avg_test_lost:
-                        best_test = avg_test_lost
-                    # print("test lost: %f" % avg_test_lost)
-                    test_epoch_score += avg_test_lost
-                    total_test_time += 1
-                else:
-                    stop_count += 1
-                if stop_count == self.patience:
-                    stop_count = 0
+                current_time_step = (epoch - 1) * n_train_batches + mini_batch
+                epoch_cost_train += train_model(mini_batch)
+                batch_train += 1
+                if (current_time_step + 1) % validation_frequency == 0:
+                    val_losses = [val_model(i) for i in xrange(n_val_batches)]
+                    val_losses = np.array(val_losses)
+                    val_batch_lost = np.mean(val_losses)
+                    if val_batch_lost < best_batch_lost:
+                        if best_batch_lost * improve_threshold > val_batch_lost:
+                            self.patience = max(self.patience, current_time_step * self.patience_frq)
+                            best_batch_lost = val_batch_lost
+                            # test it on the test set
+                            test_losses = [
+                                test_model(i)
+                                for i in range(n_test_batches)
+                            ]
+                            best_test_lost = np.mean(test_losses)
+                            print(('epoch %i minibatch %i test accuracy of %i example is: %.5f') % (epoch, mini_batch, test_len, (1 - best_test_lost) * 100.))
+                if self.patience <= current_time_step:
+                    print(current_time_step)
+                    done_loop = True
                     break
-            if total_test_time:
-                if best_test:
-                    print('Best test error: %f' % best_test)
-                average_test_epoch_score = test_epoch_score / total_test_time
-                print(('epoch %i, test error of %i example is: %.5f') % (epoch, test_len, average_test_epoch_score * 100.))
-            if batch_test:
-                print('epoch: %i, training time: %.2f secs; with avg cost: %.2f' % (epoch, time.time() - start, epoch_cost_train / batch_test))
+            print('epoch: %i, training time: %.2f secs; with avg cost: %.5f' % (epoch, time.time() - start, epoch_cost_train / batch_train))
+        print('Best test accuracy is: %.5f' % (1 - best_test_lost))
         utils.save_layer_params(lstm, 'lstm')
         utils.save_layer_params(hidden_layer, 'hidden_lstm')
         utils.save_layer_params(hidden_layer_relu, 'hidden_relu_lstm')

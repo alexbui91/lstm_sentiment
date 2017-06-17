@@ -13,7 +13,7 @@ class LSTM(object):
         self.batch_size = batch_size
         self.number_step = number_step
         self.output = None
-        if params is None:
+        if not params:
             self.init_params()
         else:
             self.set_params(params)
@@ -43,7 +43,7 @@ class LSTM(object):
         self.params = [self.Wi, self.Ui, self.bi, self.Wf, self.Uf, self.bf, self.Wc, self.Uc, self.bc, self.Wo, self.Uo, self.bo]
     
     def set_params(self, params):
-        if params is not None and len(params) is 12:
+        if len(params) is 12:
             self.params = params
             self.Wi = params[0]
             self.Ui = params[1]
@@ -85,17 +85,8 @@ class LSTM(object):
         #axis = 0 is x(col), = 1 is y (row),
         self.output = T.mean(layer_input, axis=0)
 
-class NetworkLayer(object):
-
-    def initHyperParamsFromValue(self, W, b, name="values"):
-        W_param = theano.shared(value=W, borrow=True, name=("W_" + name))
-        b_param = theano.shared(value=b, borrow=True, name=("b_" + name))
-        self.W = W_param
-        self.b = b_param
-        self.params = [self.W, self.b]
-
-class ConvolutionLayer(NetworkLayer):
-    def __init__(self, rng=None, filter_shape=None, input_shape=None, poolsize=(2, 2), non_linear="tanh", name="Conv", W=None, b=None):
+class ConvolutionLayer(object):
+    def __init__(self, rng=None, filter_shape=None, input_shape=None, poolsize=(2, 2), non_linear="tanh", name="Conv"):
         #filter_shape = number of kenel, channel, height, width
         #input_shape = batch_size, channel, height, width
         #poolsize = height_pool x width_pool (if width = 1 mean select all vector word)
@@ -106,10 +97,7 @@ class ConvolutionLayer(NetworkLayer):
         self.poolsize = poolsize
         self.rng = rng
         self.name = name
-        if W is None or b is None:
-            self.initHyperParams()
-        else:
-            self.initHyperParamsFromValue(W, b, name=name)
+        self.initHyperParams()
 
     def initHyperParams(self):
         # there are "num input feature maps * filter height * filter width"
@@ -142,7 +130,8 @@ class ConvolutionLayer(NetworkLayer):
             output = pooled_out + self.b.dimshuffle('x', 0, 'x', 'x')
         return output
 
-class HiddenLayer(NetworkLayer):
+
+class HiddenLayer(object):
     
     def __init__(self, rng=None, activation=None, hidden_sizes=None, W=None, b=None, input_vectors=None, name="Hidden"):
         self.rng = rng
@@ -156,10 +145,8 @@ class HiddenLayer(NetworkLayer):
         self.b = b
         self.name = name
         self.output = None
-        if self.W is None or self.b is None:
+        if not self.W or not self.b:
             self.init_params()
-        else: 
-            self.initHyperParamsFromValue(W, b, 'hidden_layer')
     
     def init_params(self):
         if not self.activation or self.activation.func_name == "ReLU":
@@ -187,16 +174,13 @@ class HiddenLayerDropout(HiddenLayer):
         self.input_vectors = utils.dropout_from_layer(self.rng, self.input, self.dropout_rate)    
 
 # full connect here is final layer, logistic regression => prob to calculate cost function y^ = softmax (W^T * input + b)
-class FullConnectLayer(NetworkLayer):
+class FullConnectLayer(object):
 
-    def __init__(self, rng=None, layers_size=None, input_vector=None, W=None, b=None):
+    def __init__(self, rng=None, layers_size=None, input_vector=None):
         self.rng = rng
         self.layers_size = layers_size
         self.input_vector = input_vector
-        if W is None or b is None:
-            self.initHyperParams()
-        else:
-            self.initHyperParamsFromValue(W, b, 'full_connect')
+        self.initHyperParams()
 
     def initHyperParams(self):
         W_bound = np.sqrt(6. / (self.layers_size[0] + self.layers_size[1]))

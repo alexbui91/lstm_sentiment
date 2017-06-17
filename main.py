@@ -44,8 +44,8 @@ if __name__ == '__main__':
     parser.add_argument('--hs', type=list, default=[50, 2])
     parser.add_argument('--pep', type=int, default=10)
     parser.add_argument('--fep', type=int, default=20)
-    parser.add_argument('--ppat', type=int, default=20)
-    parser.add_argument('--fpat', type=int, default=20)
+    parser.add_argument('--ppat', type=int, default=10000)
+    parser.add_argument('--fpat', type=int, default=10000)
     parser.add_argument('--plr', type=float, default=0.0001)
     parser.add_argument('--flr', type=float, default=0.1)
 
