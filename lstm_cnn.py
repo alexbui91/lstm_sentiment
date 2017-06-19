@@ -113,12 +113,12 @@ class LSTM_CNN(Model):
         validation_frequency = min(n_train_batches, self.patience // 2)
         val_batch_lost = 1.
         best_batch_lost = 1.
+        best_test_lost = 1.
         stop_count = 0
         epoch = 0
         done_loop = False
         current_time_step = 0
         improve_threshold = 0.995
-        best_test_lost = 0
         iter_list = range(n_train_batches)
         while(epoch < self.epochs and done_loop is not True):
             epoch_cost_train = 0.
@@ -144,8 +144,10 @@ class LSTM_CNN(Model):
                                 test_model(i)
                                 for i in range(n_test_batches)
                             ]
-                            best_test_lost = np.mean(test_losses)
-                            print(('epoch %i minibatch %i test accuracy of %i example is: %.5f') % (epoch, m_b_i, test_len, (1 - best_test_lost) * 100.))
+                            current_test_lost = np.mean(test_losses)
+                            print(('epoch %i minibatch %i test accuracy of %i example is: %.5f') % (epoch, m_b_i, test_len, (1 - current_test_lost) * 100.))
+                            if best_test_lost > current_test_lost:
+                                best_test_lost = current_test_lost
                 if self.patience <= current_time_step:
                     print(self.patience)
                     done_loop = True
