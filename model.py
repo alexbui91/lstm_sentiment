@@ -107,8 +107,8 @@ class Model():
             print("Start epoch: %i" % epoch)
             start = time.time()
             random.shuffle(iter_list)
-            for mini_batch in iter_list:
-                current_time_step = (epoch - 1) * n_train_batches + mini_batch
+            for mini_batch, m_b_i in zip(iter_list, xrange(n_train_batches)):
+                current_time_step = (epoch - 1) * n_train_batches + m_b_i
                 epoch_cost_train += train_model(mini_batch)
                 batch_train += 1
                 if (current_time_step + 1) % validation_frequency == 0:
@@ -125,7 +125,7 @@ class Model():
                                 for i in range(n_test_batches)
                             ]
                             best_test_lost = np.mean(test_losses)
-                            print(('epoch %i minibatch %i test accuracy of %i example is: %.5f') % (epoch, mini_batch, test_len, (1 - best_test_lost) * 100.))
+                            print(('epoch %i minibatch %i test accuracy of %i example is: %.5f') % (epoch, m_b_i, test_len, (1 - best_test_lost) * 100.))
                 if self.patience <= current_time_step:
                     print(self.patience)
                     done_loop = True
