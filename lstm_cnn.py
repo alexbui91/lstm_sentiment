@@ -5,6 +5,7 @@ import time
 import properties
 import utils 
 import math
+import random
 # from pympler import tracker
 
 from layers import LSTM, ConvolutionLayer, HiddenLayer, HiddenLayerDropout, FullConnectLayer
@@ -118,13 +119,14 @@ class LSTM_CNN(Model):
         current_time_step = 0
         improve_threshold = 0.995
         best_test_lost = 0
+        iter_list = range(n_train_batches)
         while(epoch < self.epochs and done_loop is not True):
             epoch_cost_train = 0.
             epoch += 1
             batch_train = 0
             print("Start epoch: %i" % epoch)
             start = time.time()
-            for mini_batch in xrange(n_train_batches):
+            for mini_batch in random.shuffle(iter_list):
                 current_time_step = (epoch - 1) * n_train_batches + mini_batch
                 epoch_cost_train += train_model(mini_batch)
                 batch_train += 1
