@@ -126,7 +126,8 @@ class LSTM_CNN(Model):
             batch_train = 0
             print("Start epoch: %i" % epoch)
             start = time.time()
-            for mini_batch in random.shuffle(iter_list):
+            random.shuffle(iter_list)
+            for mini_batch in iter_list:
                 current_time_step = (epoch - 1) * n_train_batches + mini_batch
                 epoch_cost_train += train_model(mini_batch)
                 batch_train += 1
