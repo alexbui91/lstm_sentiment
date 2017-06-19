@@ -127,6 +127,7 @@ class Model():
                             best_test_lost = np.mean(test_losses)
                             print(('epoch %i minibatch %i test accuracy of %i example is: %.5f') % (epoch, mini_batch, test_len, (1 - best_test_lost) * 100.))
                 if self.patience <= current_time_step:
+                    print(self.patience)
                     done_loop = True
                     break
             print('epoch: %i, training time: %.2f secs; with avg cost: %.5f' % (epoch, time.time() - start, epoch_cost_train / batch_train))
