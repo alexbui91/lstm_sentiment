@@ -34,7 +34,7 @@ def exe(word_vectors_file, vector_preloaded_path, test_path, sent, hidden_sizes,
         else: 
             print "sentiment is negative"
     elif errors:
-        print("Error of test is: %.2f" % errors)
+        print("Accuracy of test is: %.5f %" % (1 - errors) * 100)
         
     
 
